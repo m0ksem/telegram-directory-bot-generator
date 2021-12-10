@@ -110,19 +110,23 @@ const createNewItem = () => {
       <va-card class="card">
         <va-card-title v-on="listeners" :style="style">Action <span style="color: var(--va-info);">{{ item.data.id }}</span></va-card-title>
         <va-card-content>
-          <va-input label="Answer" v-model="item.data.answer" />
+          <va-input label="Text" v-model="item.data.answer" />
         </va-card-content>
         <va-card-content v-if="item.data.buttons.length">
           <va-list-item v-for="button in item.data.buttons" class="button">
             <va-input v-model="button.text" :label="button.toId === -1 ? 'Not connected': `Connected to ${button.toId}`" />
-            <div class="connect-to-circle" @click="connectFrom(item, button)" />
+            <div class="connect-to-circle d-flex align--center justify--center" @click="connectFrom(item, button)">
+              <va-icon :name="button.toId === -1 ? 'show_chart' : 'moving'" size="small" />
+            </div>
           </va-list-item>
         </va-card-content>
         <va-card-actions align="between">
           <va-button color="danger" @click="removeItem(index)">Delete</va-button>
           <va-button @click="addButton(item)">Add button</va-button>
         </va-card-actions>
-        <div class="connect-from-circle" @click="connectTo(item)" />
+        <div class="connect-from-circle d-flex align--center justify--center" @click="connectTo(item)">
+          <va-icon name="fiber_manual_record" size="small" />
+        </div>
       </va-card>
     </template>
   </DraggableCanvas>
