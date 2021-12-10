@@ -2,7 +2,7 @@
 import { ref, computed, PropType, watch } from 'vue'
 import { useSelected } from '../hooks/useSelected'
 
-const emit = defineEmits(['update:items', 'update:hovered', 'update:selected'])
+const emit = defineEmits(['update:items', 'update:hovered', 'update:selected', 'update:mouse'])
 
 type Item = { data: any, position: { x: number, y: number } }
 
@@ -21,9 +21,14 @@ const { selected: hoveredItem, set: hoverItem, unset: unHoverItem } = useSelecte
 const canvas = ref()
 const clickOffset = ref({ x: 0, y: 0 })
 const onMouseMove = (e: MouseEvent) => {
-  if (!selectedItem.value) { return }
-
   const { x, y, width, height } = canvas.value.getBoundingClientRect()
+
+  emit('update:mouse', {
+    x: e.x - x - (width / 2),
+    y: e.y - y - (height / 2)
+  })
+
+  if (!selectedItem.value) { return }
 
   const position = { 
     x: e.x - x - (width / 2) - clickOffset.value.x,
@@ -50,7 +55,7 @@ const onMouseDown = (e: MouseEvent) => {
   selectItem(hoveredItem.value);
 }
 
-const onMouseUp = () => { unselectItem(); console.log('U') }
+const onMouseUp = () => { unselectItem(); }
 
 let timer = -1
 const onItemMouseEnter = (item: Item) => { 
@@ -63,8 +68,8 @@ const onItemMouseLeave = (item: Item) => {
   timer = setTimeout(() => { unselectItem(); }, 2000)
 }
 
-watch(selectedItem, () => emit('update:selected', selectedItem.value))
-watch(hoverItem, () => emit('update:hovered', hoveredItem.value))
+watch(selectedItem, (newVal) => emit('update:selected', newVal))
+watch(hoveredItem, (newVal) => { emit('update:hovered', newVal) })
 </script>
 
 <template>
@@ -106,7 +111,6 @@ watch(hoverItem, () => emit('update:hovered', hoveredItem.value))
 
   .draggable-canvas {
     position: relative;
-    background: gray;
     height: 100%;
     width: 100%;
 
