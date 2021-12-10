@@ -7,22 +7,47 @@ const items = ref([
     data: {
       title: 'Message',
       answer: '',
+      id: 0,
     },
     position: { x: 0, y: 0 }
   },
 ])
+
+const removeItem = (index: number) => {
+  items.value = items.value.filter((i, index) => index !== index)
+}
+
+const createNewItem = () => {
+  items.value.push(  {
+    data: {
+      title: 'Message',
+      answer: '',
+      id: items.value.length,
+    },
+    position: { x: 0, y: 0 }
+  },)
+}
 </script>
 
 <template>
+  <va-navbar>
+    <template #right>
+      <va-navbar-item>
+        <va-button @click="createNewItem">
+          Add
+        </va-button>
+      </va-navbar-item>
+    </template>
+  </va-navbar>
   <DraggableCanvas v-model:items="items">
-    <template #item="{ data, listeners, style }">
+    <template #item="{ index, data, listeners, style }">
       <va-card>
-        <va-card-title v-on="listeners" :style="style">{{ data.title }}</va-card-title>
+        <va-card-title v-on="listeners" :style="style">{{ data.title }} <span style="color: var(--va-info);">{{ data.id }}</span></va-card-title>
         <va-card-content>
           <va-input label="Answer" v-model="data.answer" />
         </va-card-content>
         <va-card-actions align="between">
-          <va-button>Action 1</va-button>
+          <va-button color="danger" @click="removeItem(index)">Delete</va-button>
           <va-button>Action 2</va-button>
         </va-card-actions>
       </va-card>
@@ -43,6 +68,10 @@ const items = ref([
   justify-content: center;
   flex-direction: column;
   align-items: center;
+}
+
+.va-navbar {
+  width: 100%;
 }
 
 body { margin: 0; }

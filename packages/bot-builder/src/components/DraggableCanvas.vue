@@ -88,10 +88,10 @@ watch(hoverItem, () => emit('update:hovered', hoveredItem.value))
     >
       <div 
         class="draggable-canvas__item"
-        v-for="item in computedItems" :key="item.data"
+        v-for="(item, index) in computedItems" :key="item.data"
         :style="getItemStyle(item)"
       >
-        <slot v-once name="item" v-bind="{ item, data: item.data, style: createItemStyle(), listeners: createItemListeners(item) }">
+        <slot v-once name="item" v-bind="{ index, item, data: item.data, style: createItemStyle(), listeners: createItemListeners(item) }">
           <div class="draggable-canvas__item-content">
             {{ item.data }}
           </div>
