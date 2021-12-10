@@ -4,7 +4,7 @@ import { useSelected } from '../hooks/useSelected'
 
 const emit = defineEmits(['update:items', 'update:hovered', 'update:selected', 'update:mouse'])
 
-type Item = { position: { x: number, y: number } }
+type Item = { position: { x: number, y: number }, data: any, }
 
 const props = defineProps({
   items: { type: Array as PropType<Item[]>, default: () => [] }
@@ -50,7 +50,7 @@ const onMouseDown = (e: MouseEvent) => {
   if (!hoveredItem.value) { return }
 
   const { x, y, width, height } = (e.target as HTMLElement).getBoundingClientRect()
-  clickOffset.value = { x: e.x - x - width / 2, y: e.y - y - height - height / 2 }
+  clickOffset.value = { x: e.x - x - width / 2, y: e.y - y - height * 2 }
 
   selectItem(hoveredItem.value);
 }

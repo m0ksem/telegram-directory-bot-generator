@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, PropType, watch } from 'vue'
+import { useColors } from 'vuestic-ui'
 
 type Point = { x: number, y: number }
 
@@ -10,9 +11,12 @@ const props = defineProps({
 const canvas = ref<HTMLCanvasElement>()
 const context = ref<CanvasRenderingContext2D>()
 
+const { getColor } = useColors()
+
 const draw = () => {
   const ctx = context.value as CanvasRenderingContext2D
   ctx.lineWidth = 15;
+  ctx.strokeStyle = getColor('divider')
   const w = canvas.value?.width || 0
   const h = canvas.value?.height || 0
   ctx.clearRect(0, 0, w, h)

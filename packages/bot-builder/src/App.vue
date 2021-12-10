@@ -3,29 +3,46 @@ import { computed, ref } from 'vue'
 import DraggableCanvas from './components/DraggableCanvas.vue'
 import ConnectionsCanvas from './components/ConnectionsCanvas.vue'
 
-const items = ref([
+type Point = { x: number, y: number }
+
+type Item = {
+  data: {
+    id: number,
+    text: string,
+    buttons: {
+      toId: number,
+      text: string
+    }[]
+  },
+  position: Point
+}
+
+const items = ref<Item[]>([
   {
     data: {
-      title: 'Message',
-      answer: '',
       id: 0,
+      text: '',
+      buttons: []
     },
     position: { x: 0, y: 0 }
   },
   {
     data: {
-      title: 'Message',
-      answer: '',
+      text: '',
       id: 1,
+      buttons: []
     },
     position: { x: 100, y: 250 }
   }
 ])
 
+const addButton = (item: Item) => { item.data.buttons.push({ toId: -1, text: '' }) }
+
 const connections = ref<{ start: number, end: number }[]>([])
 
 const mouse = ref({ x: 0, y: 0 })
-const selectedItem = ref<any>(null)
+const selectedItem = ref<Item | null>(null)
+const selectedButton = ref<Item['data']['buttons'][0] | null>(null)
 
 const computedConnections = computed(() => {
   const activeConnections = connections.value.map((con) => ({
@@ -45,9 +62,18 @@ const computedConnections = computed(() => {
   return [...activeConnections, ...mouseConnection]
 })
 
-const connect = (start: any, end: any) => {
-  connections.value.push({ start: start.data.id, end: end.data.id})
+const connectFrom = (item: Item, button: Item['data']['buttons'][0]) => {
+  selectedButton.value = button
+  selectedItem.value = item
+}
+
+const connectTo = (end: Item) => {
+  if (!selectedItem.value || !selectedButton.value) { return }
+
+  connections.value.push({ start: selectedItem.value.data.id, end: end.data.id })
+  selectedButton.value.toId = end.data.id
   selectedItem.value = null
+  selectedButton.value = null
 }
 
 const removeItem = (index: number) => {
@@ -57,9 +83,9 @@ const removeItem = (index: number) => {
 const createNewItem = () => {
   items.value.push({
     data: {
-      title: 'Message',
-      answer: '',
+      text: '',
       id: items.value.length,
+      buttons: []
     },
     position: { x: 0, y: 0 }
   })
@@ -80,18 +106,23 @@ const createNewItem = () => {
     v-model:items="items"
     v-model:mouse="mouse"
   >
-    <template #item="{ index, data, listeners, style, item }">
+    <template #item="{ index, listeners, style, item }">
       <va-card class="card">
-        <va-card-title v-on="listeners" :style="style">{{ data.title }} <span style="color: var(--va-info);">{{ data.id }}</span></va-card-title>
+        <va-card-title v-on="listeners" :style="style">Action <span style="color: var(--va-info);">{{ item.data.id }}</span></va-card-title>
         <va-card-content>
-          <va-input label="Answer" v-model="data.answer" />
+          <va-input label="Answer" v-model="item.data.answer" />
+        </va-card-content>
+        <va-card-content v-if="item.data.buttons.length">
+          <va-list-item v-for="button in item.data.buttons" class="button">
+            <va-input v-model="button.text" :label="button.toId === -1 ? 'Not connected': `Connected to ${button.toId}`" />
+            <div class="connect-to-circle" @click="connectFrom(item, button)" />
+          </va-list-item>
         </va-card-content>
         <va-card-actions align="between">
           <va-button color="danger" @click="removeItem(index)">Delete</va-button>
-          <va-button>Connect</va-button>
+          <va-button @click="addButton(item)">Add button</va-button>
         </va-card-actions>
-        <div class="connect-to-circle" @click="selectedItem = item" />
-        <div class="connect-from-circle" @click="connect(selectedItem, item)" />
+        <div class="connect-from-circle" @click="connectTo(item)" />
       </va-card>
     </template>
   </DraggableCanvas>
@@ -135,8 +166,9 @@ const createNewItem = () => {
     top: 50%;
     height: 24px;
     width: 24px;
-    background: red;
+    background: var(--va-danger);
     border-radius: 50%;
+    transform: translateY(-50%);
   }
 
   .connect-to-circle {
@@ -145,8 +177,13 @@ const createNewItem = () => {
     top: 50%;
     height: 24px;
     width: 24px;
-    background: green;
+    background: var(--va-success);
     border-radius: 50%;
+    transform: translateY(-50%);
+  }
+
+  .button {
+    position: relative;
   }
 }
 
