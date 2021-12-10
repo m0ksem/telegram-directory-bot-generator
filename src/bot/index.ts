@@ -1,8 +1,8 @@
-import { BotButton, BotMessage, BotConfig } from './config/types';
-import { Context, Telegraf,  }  from 'telegraf'
+import { BotButton, BotMessage } from './config/types';
+import { Telegraf }  from 'telegraf'
 import { config } from './config'
 import { InlineKeyboardButton, InlineKeyboardMarkup, Update } from 'telegraf/typings/core/types/typegram';
-import { keyboard } from 'telegraf/typings/markup';
+import { createSessions } from './session';
 
 const createTelegramButtons = (button: BotButton): InlineKeyboardButton => {
   return {
@@ -11,14 +11,8 @@ const createTelegramButtons = (button: BotButton): InlineKeyboardButton => {
   }
 }
 
-const createTelegramKeyboard = (buttons: BotButton[][] = [], homeButton?: BotConfig['settings']['homeButton']): InlineKeyboardMarkup => {
+const createTelegramKeyboard = (buttons: BotButton[][] = [],): InlineKeyboardMarkup => {
   const keyboard = buttons.map((buttonRow) => buttonRow.map((button) => createTelegramButtons(button)))
-
-  if (homeButton) {
-    keyboard.push([
-      createTelegramButtons({ text: homeButton.text, messageId: homeButton.messageId || '0' })
-    ])
-  }
 
   return {
     inline_keyboard: keyboard
@@ -28,14 +22,30 @@ const createTelegramKeyboard = (buttons: BotButton[][] = [], homeButton?: BotCon
 export const initBot = (token: string) => {
   const bot = new Telegraf(token)
   const messages = config.messages
+  const sessions = createSessions<{ prevMessage?: string }>({ prevMessage: undefined })
 
-  const createTelegramMessage = (message: BotMessage) => {
+  const createTelegramMessage = (message: BotMessage, prevMessage?: string) => {
+    const keyboard = createTelegramKeyboard(message.buttons)
+
     const homeButton = message.hideHomeButton ? undefined : config.settings.homeButton
+    const backButton = message.hideBackButton ? undefined : config.settings.backButton
+
+    if (backButton) {
+      keyboard.inline_keyboard.push([
+        createTelegramButtons({ text: backButton.text, messageId: prevMessage || '0' })
+      ])
+    }
+
+    if (homeButton) {
+      keyboard.inline_keyboard.push([
+        createTelegramButtons({ text: homeButton.text, messageId: homeButton.messageId || '0' })
+      ])
+    }
   
     return {
       text: message.text,
       extra: {
-        reply_markup: createTelegramKeyboard(message.buttons, homeButton),
+        reply_markup: keyboard,
       }
     }
   }
@@ -52,14 +62,17 @@ export const initBot = (token: string) => {
 
     if (ctx.callbackQuery.data.startsWith('go-to-message-')) {
       const messageId = ctx.callbackQuery.data.replace('go-to-message-', '')
+      const session = sessions[ctx.from?.id || '']
 
       const message = messages.find((message) => message.id === messageId)
 
       if (!message) { throw new Error(`Invalid message id ${messageId}`)}
 
-      const { text, extra } = createTelegramMessage(message)
+      const { text, extra } = createTelegramMessage(message, session.prevMessage)
 
       ctx.editMessageText(text, extra)
+
+      session.prevMessage = message.id
     }
   })
 

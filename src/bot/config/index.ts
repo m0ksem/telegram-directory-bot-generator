@@ -12,6 +12,7 @@ export const config: BotConfig = {
         ]
       ],
       hideHomeButton: true,
+      hideBackButton: true,
     },
     {
       id: '1',
@@ -35,6 +36,9 @@ export const config: BotConfig = {
   settings: {
     homeButton: {
       text: 'Go to home',
+    },
+    backButton: {
+      text: 'Back',
     }
   }
 }

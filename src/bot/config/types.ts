@@ -12,7 +12,8 @@ export type BotMessage = {
   text: string,
   id: BotMessageId,
   buttons?: BotButtonRow[],
-  hideHomeButton?: boolean
+  hideHomeButton?: boolean,
+  hideBackButton?: boolean
 }
 
 export type BotConfig = {
@@ -20,7 +21,11 @@ export type BotConfig = {
   settings: {
     homeButton?: {
       text: string,
-      messageId?: string
+      messageId?: BotMessageId
+    },
+    backButton?: {
+      text: string,
+      messageId?: BotMessageId
     }
   }
 }
