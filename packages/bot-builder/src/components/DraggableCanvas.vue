@@ -4,7 +4,7 @@ import { useSelected } from '../hooks/useSelected'
 
 const emit = defineEmits(['update:items', 'update:hovered', 'update:selected', 'update:mouse'])
 
-type Item = { data: any, position: { x: number, y: number } }
+type Item = { position: { x: number, y: number } }
 
 const props = defineProps({
   items: { type: Array as PropType<Item[]>, default: () => [] }
@@ -86,15 +86,15 @@ watch(hoveredItem, (newVal) => { emit('update:hovered', newVal) })
     >
       <div 
         class="draggable-canvas__item"
-        v-for="(item, index) in computedItems" :key="item.data"
+        v-for="(item, index) in computedItems" :key="index"
         :style="getItemStyle(item)"
       >
         <slot name="item" v-bind="{ 
-          index, item, data: item.data, style: { cursor: 'move' }, 
+          index, item, style: { cursor: 'move' }, 
           listeners: { mouseenter: () => onItemMouseEnter(item), mouseleave: () => onItemMouseLeave(item)} 
         }">
           <div class="draggable-canvas__item-content">
-            {{ item.data }}
+            {{ item.position }}
           </div>
         </slot>
       </div>
