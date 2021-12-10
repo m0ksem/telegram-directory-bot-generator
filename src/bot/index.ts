@@ -5,7 +5,16 @@ import { InlineKeyboardButton, InlineKeyboardMarkup, Update } from 'telegraf/typ
 import { createSessions } from './session';
 import { ExtraEditMessageText } from 'telegraf/typings/telegram-types';
 
-const createTelegramButtons = (button: BotButton): InlineKeyboardButton => {
+type BotCustomButton = { text: string, data: string}
+
+const createTelegramButtons = (button: (BotButton | BotCustomButton)): InlineKeyboardButton => {
+  if ('data' in button) {
+    return {
+      text: button.text,
+      callback_data: `${button.data}`
+    }
+  }
+
   if (button.messageId) {
     return {
       text: button.text,
@@ -34,9 +43,17 @@ const createTelegramKeyboard = (buttons: BotButton[][] = [],): InlineKeyboardMar
 export const initBot = (token: string) => {
   const bot = new Telegraf(token)
   const messages = config.messages
-  const sessions = createSessions<{ prevMessage?: string }>({ prevMessage: undefined })
+  const sessions = createSessions({ 
+    history: [] as string[],
+    getPrevious() {
+      return this.history[this.history.length - 1 - 1]
+    },
+    pop() {
+      return this.history.pop()
+    }
+  })
 
-  const createTelegramMessage = (message: BotMessage, prevMessage?: string): { text: string, extra?: ExtraEditMessageText } => {
+  const createTelegramMessage = (message: BotMessage): { text: string, extra?: ExtraEditMessageText } => {
     const keyboard = createTelegramKeyboard(message.buttons)
 
     const homeButton = message.hideHomeButton ? undefined : config.settings.homeButton
@@ -44,7 +61,7 @@ export const initBot = (token: string) => {
 
     if (backButton) {
       keyboard.inline_keyboard.push([
-        createTelegramButtons({ text: backButton.text, messageId: prevMessage || '0' })
+        createTelegramButtons({ text: backButton.text, data: `back` })
       ])
     }
 
@@ -73,19 +90,39 @@ export const initBot = (token: string) => {
       return
     }
 
-    if (ctx.callbackQuery.data.startsWith('go-to-message-')) {
-      const messageId = ctx.callbackQuery.data.replace('go-to-message-', '')
+    const data = ctx.callbackQuery.data
+
+    if (data.startsWith('back')) {
+      const session = sessions[ctx.from?.id || '']
+
+      const messageId = session.getPrevious()
+
+      const message = messages.find((message) => message.id === messageId)
+
+      if (!message) { throw new Error(`Invalid message id ${messageId}`)}
+
+      const { text, extra } = createTelegramMessage(message)
+
+      ctx.editMessageText(text, extra)
+
+      session.pop()
+      return
+    }
+
+    if (data.startsWith('go-to-message-')) {
+      const messageId = data.replace('go-to-message-', '')
       const session = sessions[ctx.from?.id || '']
 
       const message = messages.find((message) => message.id === messageId)
 
       if (!message) { throw new Error(`Invalid message id ${messageId}`)}
 
-      const { text, extra } = createTelegramMessage(message, session.prevMessage)
+      const { text, extra } = createTelegramMessage(message)
 
       ctx.editMessageText(text, extra)
 
-      session.prevMessage = message.id
+      session.history.push(message.id)
+      return
     }
   })
 

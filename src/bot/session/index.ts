@@ -1,6 +1,6 @@
 
 
-export const createSessions = <T>(defaultValue: any = {}) => {
+export const createSessions = <T>(defaultValue: T) => {
   const sessions: { [key: string]: T } = {
 
   }
