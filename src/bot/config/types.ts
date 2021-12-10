@@ -25,7 +25,6 @@ export type BotConfig = {
     },
     backButton?: {
       text: string,
-      messageId?: BotMessageId
     }
   }
 }
