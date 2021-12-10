@@ -1,6 +1,5 @@
-import { BotButton, BotMessage } from './config/types';
+import { BotButton, BotConfig, BotMessage } from './config/types';
 import { Telegraf }  from 'telegraf'
-import { config } from './config'
 import { InlineKeyboardButton, InlineKeyboardMarkup, Update } from 'telegraf/typings/core/types/typegram';
 import { createSessions } from './session';
 import { ExtraEditMessageText } from 'telegraf/typings/telegram-types';
@@ -40,7 +39,7 @@ const createTelegramKeyboard = (buttons: BotButton[][] = [],): InlineKeyboardMar
   }
 }
 
-export const initBot = (token: string) => {
+export const initBot = (token: string, config: BotConfig) => {
   const bot = new Telegraf(token)
   const messages = config.messages
   const sessions = createSessions({ 
