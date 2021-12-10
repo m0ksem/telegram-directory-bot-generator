@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, markRaw } from 'vue'
 import DraggableCanvas from './components/DraggableCanvas.vue'
 
 const items = ref([

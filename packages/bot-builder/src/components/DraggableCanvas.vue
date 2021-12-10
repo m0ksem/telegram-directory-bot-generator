@@ -4,9 +4,7 @@ import { useSelected } from '../hooks/useSelected'
 
 const emit = defineEmits(['update:items', 'update:hovered', 'update:selected'])
 
-type Item = {
-  data: any, position: { x: number, y: number },
-}
+type Item = { data: any, position: { x: number, y: number } }
 
 const props = defineProps({
   items: { type: Array as PropType<Item[]>, default: () => [] }
@@ -22,6 +20,7 @@ const { selected: hoveredItem, set: hoverItem, unset: unHoverItem } = useSelecte
 
 const canvas = ref()
 const clickOffset = ref({ x: 0, y: 0 })
+const positionMap = ref<Record<string, any>>({})
 const onMouseMove = (e: MouseEvent) => {
   if (!selectedItem.value) { return }
 
@@ -36,32 +35,35 @@ const onMouseMove = (e: MouseEvent) => {
 }
 
 const getItemStyle = (item: Item) => {
+  const position = item.position || { x: 0, y: 0}
+
   return {
-    transform: `translateX(${item.position.x}px) translateY(${item.position.y}px) translateX(-50%) translateY(-50%)`
+    transform: `translateX(${position.x}px) translateY(${position.y}px) translateX(-50%) translateY(-50%)`
   }
 }
 
 const onMouseDown = (e: MouseEvent) => {
+  if (!hoveredItem.value) { return }
+
   const { x, y, width, height } = (e.target as HTMLElement).getBoundingClientRect()
   clickOffset.value = { x: e.x - x - width / 2, y: e.y - y - height - height / 2 }
-
-  if (!hoveredItem.value) { return }
 
   selectItem(hoveredItem.value);
 }
 
-const onMouseUp = () => { unselectItem(); }
+const onMouseUp = () => { unselectItem() }
 
 const createItemListeners = (item: Item) => {
   let timer = -1
 
   return {
-    mouseover: () => {
+    mouseenter: () => {
       clearTimeout(timer)
       hoverItem(item)
     },
-    mouseout: () => {
-      timer = setTimeout(() => unHoverItem(), 1000)
+    mouseleave: () => {
+      unHoverItem();
+      timer = setTimeout(() => { unselectItem(); }, 2000)
     },
   }
 }
@@ -73,35 +75,44 @@ watch(hoverItem, () => emit('update:hovered', hoveredItem.value))
 </script>
 
 <template>
-  <div 
-    class="draggable-canvas" 
-    ref="canvas"
+  <div
+    class="draggable-canvas-wrapper"
     @mousemove="onMouseMove"
     @mousedown="onMouseDown"
     @mouseup="onMouseUp"
-    @mouseout="unselectItem"
+    @mouseleave="unselectItem"
   >
     <div 
-      class="draggable-canvas__item"
-      v-for="(item, index) in computedItems" :key="index"
-      :style="getItemStyle(item)"
+      class="draggable-canvas" 
+      ref="canvas"
     >
-      <slot name="item" v-bind="{ item, data: item.data, style: createItemStyle(), listeners: createItemListeners(item) }">
-        <div class="draggable-canvas__item-content">
-          {{ item.data }}
-        </div>
-      </slot>
-    </div>
+      <div 
+        class="draggable-canvas__item"
+        v-for="item in computedItems" :key="item.data"
+        :style="getItemStyle(item)"
+      >
+        <slot v-once name="item" v-bind="{ item, data: item.data, style: createItemStyle(), listeners: createItemListeners(item) }">
+          <div class="draggable-canvas__item-content">
+            {{ item.data }}
+          </div>
+        </slot>
+      </div>
+    </div>    
   </div>
 </template>
 
 <style lang="scss">
+  .draggable-canvas-wrapper {
+    height: 100%;
+    width: 100%;
+    overflow: auto;
+  }
+
   .draggable-canvas {
     position: relative;
     background: gray;
-    height: 50%;
-    width: 50%;
-    // overflow: hidden;
+    height: 100%;
+    width: 100%;
 
     &__item {
       cursor: pointer;
