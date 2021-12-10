@@ -20,7 +20,6 @@ const { selected: hoveredItem, set: hoverItem, unset: unHoverItem } = useSelecte
 
 const canvas = ref()
 const clickOffset = ref({ x: 0, y: 0 })
-const positionMap = ref<Record<string, any>>({})
 const onMouseMove = (e: MouseEvent) => {
   if (!selectedItem.value) { return }
 
@@ -51,24 +50,18 @@ const onMouseDown = (e: MouseEvent) => {
   selectItem(hoveredItem.value);
 }
 
-const onMouseUp = () => { unselectItem() }
+const onMouseUp = () => { unselectItem(); console.log('U') }
 
-const createItemListeners = (item: Item) => {
-  let timer = -1
-
-  return {
-    mouseenter: () => {
-      clearTimeout(timer)
-      hoverItem(item)
-    },
-    mouseleave: () => {
-      unHoverItem();
-      timer = setTimeout(() => { unselectItem(); }, 2000)
-    },
-  }
+let timer = -1
+const onItemMouseEnter = (item: Item) => { 
+  clearTimeout(timer)
+  hoverItem(item)
 }
 
-const createItemStyle = () => { cursor: 'move' }
+const onItemMouseLeave = (item: Item) => {
+  unHoverItem();
+  timer = setTimeout(() => { unselectItem(); }, 2000)
+}
 
 watch(selectedItem, () => emit('update:selected', selectedItem.value))
 watch(hoverItem, () => emit('update:hovered', hoveredItem.value))
@@ -91,7 +84,10 @@ watch(hoverItem, () => emit('update:hovered', hoveredItem.value))
         v-for="(item, index) in computedItems" :key="item.data"
         :style="getItemStyle(item)"
       >
-        <slot v-once name="item" v-bind="{ index, item, data: item.data, style: createItemStyle(), listeners: createItemListeners(item) }">
+        <slot name="item" v-bind="{ 
+          index, item, data: item.data, style: { cursor: 'move' }, 
+          listeners: { mouseenter: () => onItemMouseEnter(item), mouseleave: () => onItemMouseLeave(item)} 
+        }">
           <div class="draggable-canvas__item-content">
             {{ item.data }}
           </div>
