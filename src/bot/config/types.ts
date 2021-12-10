@@ -3,7 +3,8 @@ export type BotMessageId = string
 // TODO: add link or messageID
 export type BotButton = {
   text: string,
-  messageId: BotMessageId
+  messageId?: BotMessageId,
+  url?: string 
 }
 
 export type BotButtonRow = BotButton[]

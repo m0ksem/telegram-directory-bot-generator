@@ -3,12 +3,24 @@ import { Telegraf }  from 'telegraf'
 import { config } from './config'
 import { InlineKeyboardButton, InlineKeyboardMarkup, Update } from 'telegraf/typings/core/types/typegram';
 import { createSessions } from './session';
+import { ExtraEditMessageText } from 'telegraf/typings/telegram-types';
 
 const createTelegramButtons = (button: BotButton): InlineKeyboardButton => {
-  return {
-    text: button.text,
-    callback_data: `go-to-message-${button.messageId}`
+  if (button.messageId) {
+    return {
+      text: button.text,
+      callback_data: `go-to-message-${button.messageId}`
+    }    
   }
+
+  if (button.url) {
+    return {
+      text: button.text,
+      url: `${button.url}`
+    }
+  }
+
+  throw new Error(`Url or messageId is required`)
 }
 
 const createTelegramKeyboard = (buttons: BotButton[][] = [],): InlineKeyboardMarkup => {
@@ -24,7 +36,7 @@ export const initBot = (token: string) => {
   const messages = config.messages
   const sessions = createSessions<{ prevMessage?: string }>({ prevMessage: undefined })
 
-  const createTelegramMessage = (message: BotMessage, prevMessage?: string) => {
+  const createTelegramMessage = (message: BotMessage, prevMessage?: string): { text: string, extra?: ExtraEditMessageText } => {
     const keyboard = createTelegramKeyboard(message.buttons)
 
     const homeButton = message.hideHomeButton ? undefined : config.settings.homeButton
@@ -46,6 +58,7 @@ export const initBot = (token: string) => {
       text: message.text,
       extra: {
         reply_markup: keyboard,
+        parse_mode: 'Markdown'
       }
     }
   }
