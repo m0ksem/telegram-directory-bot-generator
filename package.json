@@ -1,14 +1,12 @@
 {
-  "name": "vetbot",
+  "name": "bot-builder",
   "version": "1.0.0",
   "main": "index.js",
-  "license": "MIT",
-  "dependencies": {
-    "telegraf": "^4.5.2",
-    "ts-node": "^10.4.0",
-    "typescript": "^4.5.3"
-  },
+  "repository": "https://github.com/m0ksem/telegram-directory-bot-generator.git",
+  "author": "m0ksem <m0ksem1337@gmail.com>",
+  "private": "true",
+  "workspaces": ["packages/*"],
   "scripts": {
-    "serve": "ts-node ./src/index.ts"
+    "serve:bot": "yarn workspace bot serve"
   }
 }
