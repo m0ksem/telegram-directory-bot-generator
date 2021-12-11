@@ -4,6 +4,7 @@ import DraggableCanvas from './components/DraggableCanvas.vue'
 import ConnectionsCanvas from './components/ConnectionsCanvas.vue'
 import GithubLogo from './components/icons/GithubIcon.vue'
 import ScrollWrapper from './components/ScrollWrapper.vue'
+import JsonConfigPopupButton from './components/JsonConfigPopupButton.vue'
 import { useTheme } from './hooks/useTheme'
 import { useMouse } from './hooks/useMouse'
 import type { Item, ItemButton, Connection, StartConnection } from './types'
@@ -75,11 +76,14 @@ const connectTo = (item: Item, event: MouseEvent) => {
     button: startConnection.value.button
   })
 
+  startConnection.value.button.messageId = String(item.data.id)
+
   startConnection.value = null
 }
 
 const unconnectButton = (button: ItemButton) => {
   connections.value = connections.value.filter((conn) => conn.button.id !== button.id)
+  button.messageId = undefined
 }
 
 const undoConnectFrom = () => { startConnection.value = null }
@@ -101,6 +105,20 @@ const unusedButtonsCount = computed(() => items.value.reduce((itemAcc, item) => 
       return connections.value.some((con) => con.button.id === btn.id) ? buttonAcc : buttonAcc + 1
     }, 0) + itemAcc
 }, 0))
+
+const createBotConfig = () => {
+  return items.value.map((item) => {
+    return {
+      text: item.data.text,
+      id: item.data.id,
+      buttons: item.data.buttons.map((button) => ({
+        text: button.text,
+        messageId: button.messageId,
+        url: button.url
+      }))
+    }
+  })
+}
 </script>
 
 <template>
@@ -126,6 +144,9 @@ const unusedButtonsCount = computed(() => items.value.reduce((itemAcc, item) => 
         
         <va-button class="mr-2" @click="createNewItem" icon="add"> Add </va-button>
         <va-button class="mr-2" @click="toggleTheme" icon="palette"> Switch theme </va-button>
+
+        <JsonConfigPopupButton :create-config="createBotConfig" class="mr-2"> Export to JSON </JsonConfigPopupButton>
+
         <va-button href="https://github.com/m0ksem/telegram-directory-bot-generator" round color="#000">
           <GithubLogo style="color: white; fill: white;"/> 
         </va-button>

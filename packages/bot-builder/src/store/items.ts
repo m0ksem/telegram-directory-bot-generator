@@ -10,7 +10,7 @@ export const defaultItems: Item[] = [
         id: 0, 
       }]
     },
-    position: { x: 0, y: 0 }
+    position: { x: -200, y: 0 }
   },
   {
     data: {
@@ -18,6 +18,6 @@ export const defaultItems: Item[] = [
       id: 1,
       buttons: []
     },
-    position: { x: 100, y: 250 }
+    position: { x: 250, y: 300 }
   }
 ]
