@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import DraggableCanvas from './components/DraggableCanvas.vue'
 import ConnectionsCanvas from './components/ConnectionsCanvas.vue'
+import GithubLogo from './components/icons/GithubIcon.vue'
 import { useTheme } from './hooks/useTheme'
 import { useMouse } from './hooks/useMouse'
 import { Item, ItemButton, Connection, StartConnection } from './types'
@@ -110,7 +111,10 @@ const unusedButtonsCount = computed(() => items.value.reduce((acc, item) => {
         </va-popover>
         
         <va-button class="mr-2" @click="createNewItem" icon="add"> Add </va-button>
-        <va-button @click="toggleTheme" icon="palette"> Switch theme </va-button>
+        <va-button class="mr-2" @click="toggleTheme" icon="palette"> Switch theme </va-button>
+        <va-button href="https://github.com/m0ksem/telegram-directory-bot-generator" round color="#000">
+          <GithubLogo style="color: white; fill: white;"/> 
+        </va-button>
       </va-navbar-item>
     </template>
   </va-navbar>
