@@ -10,8 +10,8 @@ export const useTheme = () => {
     isDark.value = true
     setColors({
       primary: '#3e4df7',
-      secondary: '#474554',
-      background: '#0c121c',
+      secondary: '#202020',
+      background: '#121212',
       success: '#60a315',
       info: '#827ef3',
       danger: '#f00a67',
@@ -19,7 +19,7 @@ export const useTheme = () => {
       gray: '#aeaeb1',
       dark: '#ffffff',
       white: '#020000',
-      cardColor: '#060609',
+      cardColor: '#202020',
     })
   }
 
@@ -33,7 +33,7 @@ export const useTheme = () => {
       info: '#2c82e0',
       danger: '#DE1041',
       warning: '#FFAC0A',
-      gray: '#babfc2',
+      gray: '#202020',
       dark: '#0a1622',
       white: '#ffffff',
       cardColor: '#fcfdff',

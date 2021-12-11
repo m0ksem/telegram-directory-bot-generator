@@ -4,7 +4,7 @@ import DraggableCanvas from './components/DraggableCanvas.vue'
 import ConnectionsCanvas from './components/ConnectionsCanvas.vue'
 import { useTheme } from './hooks/useTheme'
 import { useMouse } from './hooks/useMouse'
-import { Point, Item, ItemButton } from './types'
+import { Point, Item, ItemButton, Connection, StartConnection } from './types'
 import { defaultItems } from './store/items'
 
 const { toggle: toggleTheme } = useTheme()
@@ -26,14 +26,11 @@ const removeItem = (index: number) => {
   items.value = items.value.filter((i, index) => index !== index)
 }
 
-const addButton = (item: Item) => { item.data.buttons.push({ toId: -1, text: '', id: item.data.buttons.length }) }
+const addButton = (item: Item) => { item.data.buttons.push({ text: '', id: item.data.buttons.length }) }
 const removeButton = (item: Item, button: ItemButton) => { 
   item.data.buttons = item.data.buttons.filter((b) => b.id !== button.id)
   connections.value = connections.value.filter((conn) => conn.button.id !== button.id )
 }
-
-type Connection = { item: Item, el?: HTMLElement }
-type StartConnection = Connection & { button: ItemButton }
 
 const connections = ref<{ start: Connection, end: Connection, button: ItemButton }[]>([])
 
@@ -72,17 +69,21 @@ const connectTo = (item: Item, event: MouseEvent) => {
     button: startConnection.value.button
   })
 
-  startConnection.value.button.toId = item.data.id
   startConnection.value = null
 }
 
-const isButtonConnected = (button: ItemButton) => button.toId !== -1
+const isButtonConnected = (button: ItemButton) => connections.value.some((con) => con.button.id === button.id)
 const isItemConnected = (item: Item) => connections.value.some((con) => con.end.item.data.id === item.data.id)
 </script>
 
 <template>
 <div class="app">
   <va-navbar>
+    <template #left>
+      <va-navbar-item class="display-5">
+        Bot dictionary generator
+      </va-navbar-item>
+    </template>
     <template #right>
       <va-navbar-item>
         <va-button class="mr-2" @click="createNewItem" icon="add"> Add </va-button>
@@ -96,12 +97,12 @@ const isItemConnected = (item: Item) => connections.value.some((con) => con.end.
     style="z-index: 1;"
   >
     <template #item="{ index, listeners, style, item }">
-      <va-card class="action-card">
+      <va-card class="action-card" style="opacity: 0.94;">
         <va-card-title v-on="listeners" :style="{ color: 'var(--va-primary)', ...style }" >
-        Action {{ item.data.id }}
+        Action <span class="ml-2">{{ item.data.id + 1 }}</span>
         </va-card-title>
         <va-card-content>
-          <va-input label="Text" v-model="item.data.text" placeholder="Message text" />
+          <va-input label="Text" type="textarea" v-model="item.data.text" placeholder="Message text" />
         </va-card-content>
   
         <va-card-content v-if="item.data.buttons.length">

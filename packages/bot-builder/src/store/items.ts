@@ -5,7 +5,10 @@ export const defaultItems: Item[] = [
     data: {
       id: 0,
       text: '',
-      buttons: []
+      buttons: [{
+        text: ``,
+        id: 0, 
+      }]
     },
     position: { x: 0, y: 0 }
   },

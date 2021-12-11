@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, PropType, watch } from 'vue'
+import { onMounted, ref, PropType, onBeforeUnmount } from 'vue'
 import { useColors } from 'vuestic-ui'
 
 type Point = { x: number, y: number }
@@ -50,17 +50,28 @@ const render = () => {
   })    
 }
 
-onMounted(() => {
+const updateCanvasHeight = () => {
   if (!canvas.value) { return }
-
-  context.value = canvas.value?.getContext('2d') as CanvasRenderingContext2D
   canvas.value.height = canvas.value.offsetHeight
   canvas.value.width = canvas.value.offsetWidth
 
-  context.value.lineWidth = 15;
+  context.value = canvas.value?.getContext('2d') as CanvasRenderingContext2D
+  context.value.lineWidth = 12;
   context.value.strokeStyle = getColor('gray')
+}
+
+onMounted(() => {
+  if (!canvas.value) { return }
+
+  updateCanvasHeight()
 
   render()
+
+  window.addEventListener('resize', updateCanvasHeight)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateCanvasHeight)
 })
 </script>
 
