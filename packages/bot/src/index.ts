@@ -1,4 +1,5 @@
 import { initBot } from './bot'
 import { config } from './config'
+import './utils/loadDotEnv'
 
-initBot('486208512:AAFG-1IV_ScYy8hyXv3wzLUWTefI_gzKG2Q', config)
+initBot(process.env.BOT_TOKEN as string, config)
