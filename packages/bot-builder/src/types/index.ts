@@ -14,7 +14,8 @@ export type Item = {
     text: string,
     buttons: ItemButton[]
   },
-  position: Point
+  position: Point,
+  connectEl?: HTMLElement
 }
 
 export type Connection = {

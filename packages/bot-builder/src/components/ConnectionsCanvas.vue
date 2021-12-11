@@ -13,6 +13,12 @@ const context = ref<CanvasRenderingContext2D>()
 
 const { getColor } = useColors()
 
+const getVueElement = (comp: any) => {
+  if ('$el' in comp) return comp.$el
+
+  return comp
+}
+
 const safePoint = (point: Point | HTMLElement) => {
   const { x: canvasX, y: canvasY, width: canvasWidth, height: canvasHeight } = canvas.value!.getBoundingClientRect()
   const canvasScale = {
@@ -27,7 +33,9 @@ const safePoint = (point: Point | HTMLElement) => {
     }
   }
 
-  const { x, y, width, height } = point.getBoundingClientRect()
+  const el = getVueElement(point)
+
+  const { x, y, width, height } = el.getBoundingClientRect()
 
   return {
     x: (x + width / 2 - canvasX) * canvasScale.x,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import DraggableCanvas from './components/DraggableCanvas.vue'
 import ConnectionsCanvas from './components/ConnectionsCanvas.vue'
 import GithubLogo from './components/icons/GithubIcon.vue'
@@ -119,6 +119,32 @@ const createBotConfig = () => {
     }
   })
 }
+
+const setButtonRef = (button: ItemButton) => (el: HTMLElement) => { button.el = el }
+
+const setItemConnectRef = (item: Item) => (el: any) => { item.connectEl = el }
+
+const generateConnections = () => {
+  items.value.forEach((startItem) => {
+    startItem.data.buttons.forEach((button) => {
+      if (button.messageId === undefined) { return }
+
+      const endItem = items.value.find((item) => String(item.data.id) === button.messageId)
+
+      if (!endItem) { return }
+
+      connections.value.push({
+        start: { item: startItem, el: button.el },
+        end: { item: endItem, el: endItem.connectEl },
+        button,
+      })
+    })
+  })
+}
+
+onMounted(() => {
+  generateConnections()
+})
 </script>
 
 <template>
@@ -170,12 +196,12 @@ const createBotConfig = () => {
     
           <va-card-content v-if="item.data.buttons.length">
               <va-list-label color="primary">Buttons</va-list-label>
-              <va-card outlined v-for="button in (item.data.buttons as ItemButton[])"  style="margin: 0 -8px;">
+              <va-card outlined v-for="button in (item.data.buttons as ItemButton[])" style="margin: 0 -8px;">
                 <va-list-item class="bot-button">
                     <va-button class="mr-2" icon="delete" color="danger" @click="removeButton(item, button)" />
                     <div class="pr-2">
                       <va-input
-                        v-model="button.text" 
+                        v-model="button.text"
                         label="Button Text"
                         placeholder="Button text"
                       />
@@ -194,6 +220,7 @@ const createBotConfig = () => {
                         @click="connectFrom(item, button, $event); button.url = undefined"
                         :icon="isButtonConnected(button) ? 'moving' : 'show_chart'" 
                         :color="isButtonConnected(button) ? 'success' : 'warning'"
+                        :ref="setButtonRef(button)"
                       />
                       <va-button
                         class="state-button"
@@ -210,7 +237,7 @@ const createBotConfig = () => {
             <va-button :disabled="items.length === 1" color="danger" @click="removeItem(index)" icon="delete" fab></va-button>
             <va-button @click="addButton(item)" icon="add">Add button</va-button>
           </va-card-actions>
-          <div class="connect-to-circle d-flex align--center justify--center" @click="connectTo(item, $event)">
+          <div class="connect-to-circle d-flex align--center justify--center" @click="connectTo(item, $event)" :ref="setItemConnectRef(item)">
             <va-button
               icon="fiber_manual_record"
               :color="isItemConnected(item) ? 'success' : 'warning'"
