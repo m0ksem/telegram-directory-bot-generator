@@ -106,13 +106,15 @@ watch(hoveredItem, (newVal) => { emit('update:hovered', newVal) })
   .draggable-canvas-wrapper {
     height: 100%;
     width: 100%;
-    overflow: auto;
+    overflow-x: auto;
+    overflow-y: auto
   }
 
   .draggable-canvas {
     position: relative;
     height: 100%;
     width: 100%;
+    overflow: hidden;
 
     &__item {
       cursor: pointer;

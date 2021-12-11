@@ -96,6 +96,7 @@ const createNewItem = () => {
 </script>
 
 <template>
+<div class="app">
   <va-navbar>
     <template #right>
       <va-navbar-item>
@@ -138,7 +139,8 @@ const createNewItem = () => {
 
   <div class="connections">
     <ConnectionsCanvas :connections="computedConnections" />
-  </div>
+  </div> 
+</div>
 </template>
 
 <style lang="scss">
@@ -196,5 +198,17 @@ const createNewItem = () => {
   }
 }
 
-body { margin: 0; }
+.app {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+
+  .draggable-canvas-wrapper {
+    flex: 1;
+  }
+}
+
+body { margin: 0; overflow: hidden; }
 </style>
