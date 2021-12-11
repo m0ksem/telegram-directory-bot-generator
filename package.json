@@ -8,6 +8,7 @@
   "workspaces": ["packages/*"],
   "scripts": {
     "serve:bot": "yarn workspace bot serve",
-    "serve:builder": "yarn workspace bot-builder dev"
+    "serve:builder": "yarn workspace bot-builder dev",
+    "build:builder": "yarn workspace bot-builder build"
   }
 }
