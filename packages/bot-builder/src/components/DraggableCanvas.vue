@@ -24,11 +24,6 @@ const clickOffset = ref({ x: 0, y: 0 })
 const onMouseMove = (e: MouseEvent) => {
   const { x, y, width, height } = canvas.value.getBoundingClientRect()
 
-  emit('update:mouse', {
-    x: e.x - x - (width / 2),
-    y: e.y - y - (height / 2)
-  })
-
   if (!selectedItem.value || hoveredItemIndex.value === null) { return }
 
   const itemRef = itemRefs.value[hoveredItemIndex.value]

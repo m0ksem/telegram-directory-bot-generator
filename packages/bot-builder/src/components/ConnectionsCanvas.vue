@@ -5,7 +5,7 @@ import { useColors } from 'vuestic-ui'
 type Point = { x: number, y: number }
 
 const props = defineProps({
-  connections: { type: Array as PropType<{ start: Point, end: Point }[]>, default: [] }
+  connections: { type: Array as PropType<{ start: Point | HTMLElement, end: Point | HTMLElement }[]>, default: [] }
 })
 
 const canvas = ref<HTMLCanvasElement>()
@@ -13,20 +13,41 @@ const context = ref<CanvasRenderingContext2D>()
 
 const { getColor } = useColors()
 
+const safePoint = (point: Point | HTMLElement) => {
+  if ('x' in point && 'y' in point) {
+    return point
+  }
+
+  const {x, y, width, height} = point.getBoundingClientRect()
+
+  return {
+    x: x + width / 2,
+    y: y + height / 2,
+  }
+}
+
 const draw = () => {
   const ctx = context.value as CanvasRenderingContext2D
-  ctx.lineWidth = 15;
-  ctx.strokeStyle = getColor('gray')
   const w = canvas.value?.width || 0
   const h = canvas.value?.height || 0
   ctx.clearRect(0, 0, w, h)
 
   props.connections.forEach((connection) => {
+    const start = safePoint(connection.start)
+    const end = safePoint(connection.end)
+
     ctx.beginPath();
-    ctx.moveTo(connection.start.x + w / 2, connection.start.y + h / 2);
-    ctx.lineTo(connection.end.x + w / 2, connection.end.y + h / 2);
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
     ctx.stroke();
   })
+}
+
+const render = () => {
+  requestAnimationFrame(() => {
+    draw()
+    render()
+  })    
 }
 
 onMounted(() => {
@@ -36,12 +57,11 @@ onMounted(() => {
   canvas.value.height = canvas.value.offsetHeight
   canvas.value.width = canvas.value.offsetWidth
 
-  draw()
-})
+  context.value.lineWidth = 15;
+  context.value.strokeStyle = getColor('gray')
 
-watch(() => props.connections, () => {
-  draw()
-}, { deep: true })
+  render()
+})
 </script>
 
 <template>

@@ -3,85 +3,13 @@ import { computed, ref } from 'vue'
 import DraggableCanvas from './components/DraggableCanvas.vue'
 import ConnectionsCanvas from './components/ConnectionsCanvas.vue'
 import { useTheme } from './hooks/useTheme'
+import { useMouse } from './hooks/useMouse'
+import { Point, Item, ItemButton } from './types'
+import { defaultItems } from './store/items'
 
 const { toggle: toggleTheme } = useTheme()
 
-type Point = { x: number, y: number }
-
-type Item = {
-  data: {
-    id: number,
-    text: string,
-    buttons: {
-      toId: number,
-      text: string
-    }[]
-  },
-  position: Point
-}
-
-const items = ref<Item[]>([
-  {
-    data: {
-      id: 0,
-      text: '',
-      buttons: []
-    },
-    position: { x: 0, y: 0 }
-  },
-  {
-    data: {
-      text: '',
-      id: 1,
-      buttons: []
-    },
-    position: { x: 100, y: 250 }
-  }
-])
-
-const addButton = (item: Item) => { item.data.buttons.push({ toId: -1, text: '' }) }
-
-const connections = ref<{ start: number, end: number }[]>([])
-
-const mouse = ref({ x: 0, y: 0 })
-const selectedItem = ref<Item | null>(null)
-const selectedButton = ref<Item['data']['buttons'][0] | null>(null)
-
-const computedConnections = computed(() => {
-  const activeConnections = connections.value.map((con) => ({
-    start: items.value.find((item) => con.start === item.data.id)!.position,
-    end: items.value.find((item) => con.end === item.data.id)!.position
-  }))
-
-  const mouseConnection: any[] = []
-
-  if (selectedItem.value) {
-    mouseConnection.push({
-      start: selectedItem.value.position,
-      end: mouse.value
-    })
-  }
-
-  return [...activeConnections, ...mouseConnection]
-})
-
-const connectFrom = (item: Item, button: Item['data']['buttons'][0]) => {
-  selectedButton.value = button
-  selectedItem.value = item
-}
-
-const connectTo = (end: Item) => {
-  if (!selectedItem.value || !selectedButton.value) { return }
-
-  connections.value.push({ start: selectedItem.value.data.id, end: end.data.id })
-  selectedButton.value.toId = end.data.id
-  selectedItem.value = null
-  selectedButton.value = null
-}
-
-const removeItem = (index: number) => {
-  items.value = items.value.filter((i, index) => index !== index)
-}
+const items = ref<Item[]>(defaultItems)
 
 const createNewItem = () => {
   items.value.push({
@@ -92,6 +20,59 @@ const createNewItem = () => {
     },
     position: { x: 0, y: 0 }
   })
+}
+
+const removeItem = (index: number) => {
+  items.value = items.value.filter((i, index) => index !== index)
+}
+
+const addButton = (item: Item) => { item.data.buttons.push({ toId: -1, text: '', id: item.data.buttons.length }) }
+const removeButton = (item: Item, button: ItemButton) => { 
+  item.data.buttons = item.data.buttons.filter((b) => b.id !== button.id)
+  connections.value = connections.value.filter((conn) => conn.button.id !== button.id )
+}
+
+type Connection = { item: Item, el?: HTMLElement }
+type StartConnection = Connection & { button: ItemButton }
+
+const connections = ref<{ start: Connection, end: Connection, button: ItemButton }[]>([])
+
+const connectionsCanvas = ref()
+const { mouse } = useMouse(connectionsCanvas)
+const startConnection = ref<StartConnection | null>(null)
+
+const computedConnections = computed(() => {
+  const activeConnections = connections.value.map((con) => ({
+    start: con.start.el,
+    end: con.end.el,
+  }))
+
+  const mouseConnection: any[] = []
+
+  if (startConnection.value) {
+    mouseConnection.push({
+      start: startConnection.value.el,
+      end: mouse.value
+    })
+  }
+
+  return [...activeConnections, ...mouseConnection]
+})
+
+const connectFrom = (item: Item, button: ItemButton, event: MouseEvent) => {
+  startConnection.value = { item, button, el: event.target as HTMLElement }
+}
+
+const connectTo = (item: Item, event: MouseEvent) => {
+  if (!startConnection.value) { return }
+
+  connections.value.push({ 
+    start: startConnection.value, 
+    end: { item, el: event.target as HTMLElement },
+    button: startConnection.value.button
+  })
+
+  startConnection.value = null
 }
 </script>
 
@@ -112,33 +93,39 @@ const createNewItem = () => {
   >
     <template #item="{ index, listeners, style, item }">
       <va-card class="card" color="white">
-        <va-card-title v-on="listeners" :style="{ color: 'var(--va-info)' ,...style }" >
+        <va-card-title v-on="listeners" :style="{ color: 'var(--va-info)', ...style }" >
         Action {{ item.data.id }}
         </va-card-title>
         <va-card-content>
           <va-input label="Text" v-model="item.data.answer" />
         </va-card-content>
+  
         <va-card-content v-if="item.data.buttons.length">
+          <va-list-label>Buttons</va-list-label>
           <va-list-item v-for="button in item.data.buttons" class="button">
-            <va-input v-model="button.text" :label="button.toId === -1 ? 'Not connected': `Connected to ${button.toId}`" />
-            <div class="connect-to-circle d-flex align--center justify--center" @click="connectFrom(item, button)">
-              <va-icon :name="button.toId === -1 ? 'show_chart' : 'moving'" size="small" />
+            <va-button icon="delete" color="danger" @click="removeButton(item, button)" />
+            <div class="px-2">
+              <va-input v-model="button.text" :label="button.toId === -1 ? 'Not connected': `Connected to ${button.toId}`" />             
+            </div>
+            <div @click="connectFrom(item, button, $event)">
+              <va-button :icon="button.toId === -1 ? 'show_chart' : 'moving'" />
             </div>
           </va-list-item>
         </va-card-content>
+  
         <va-card-actions align="between">
           <va-button color="danger" @click="removeItem(index)">Delete</va-button>
           <va-button @click="addButton(item)">Add button</va-button>
         </va-card-actions>
-        <div class="connect-from-circle d-flex align--center justify--center" @click="connectTo(item)">
-          <va-icon name="fiber_manual_record" size="small" />
+        <div class="connect-from-circle d-flex align--center justify--center" @click="connectTo(item, $event)">
+          <va-button icon="fiber_manual_record" />
         </div>
       </va-card>
     </template>
   </DraggableCanvas>
 
   <div class="connections">
-    <ConnectionsCanvas :connections="computedConnections" />
+    <ConnectionsCanvas ref="connectionsCanvas" :connections="computedConnections" />
   </div> 
 </div>
 </template>
