@@ -23,7 +23,11 @@ const createNewItem = () => {
   })
 }
 
-const removeItem = (index: number) => { items.value = items.value.filter((i, idx) => idx !== index) }
+const removeItem = (index: number) => {
+  const item = items.value[index]
+  items.value = items.value.filter((i, idx) => idx !== index)
+  connections.value = connections.value.filter((conn) => conn.end.item.data.id !== item.data.id)
+}
 
 const addButton = (item: Item) => { item.data.buttons.push({ text: '', id: `${item.data.id}-${item.data.buttons.length}` }) }
 const removeButton = (item: Item, button: ItemButton) => { 
