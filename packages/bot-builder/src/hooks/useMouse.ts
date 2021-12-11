@@ -44,6 +44,25 @@ export const useMouse = (target?: HTMLElement | Ref<HTMLElement>) => {
     safeTarget.addEventListener('mousemove', moveHandler)
   })
 
+  const getTargetSizes = () => {
+    if (!safeTarget.getBoundingClientRect) {
+      return { width: window.innerWidth, height: window.innerHeight }
+    }
+
+    return safeTarget.getBoundingClientRect()
+  }
+
+  const normalize = () => {
+    if (!safeTarget) { return { x: 0, y: 0 } }
+
+    const { width, height } = getTargetSizes()
+
+    return {
+      x: mouse.value.x - (width / 2),
+      y: mouse.value.y - (height / 2)
+    }
+  }
+
 
   onBeforeUnmount(() => {
     safeTarget.removeEventListener('mousedown', mouseDownHandler)
@@ -58,5 +77,6 @@ export const useMouse = (target?: HTMLElement | Ref<HTMLElement>) => {
     mousemove,
     buttons,
     onRightClick,
+    normalize,
   }
 }

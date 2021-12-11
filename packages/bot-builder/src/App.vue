@@ -197,12 +197,11 @@ const unusedButtonsCount = computed(() => items.value.reduce((itemAcc, item) => 
           </div>
         </va-card>
       </template>
-    </DraggableCanvas>    
+    </DraggableCanvas>   
+    <div class="connections">
+      <ConnectionsCanvas ref="connectionsCanvas" :connections="computedConnections" />
+    </div>  
   </ScrollWrapper>
-
-  <div class="connections">
-    <ConnectionsCanvas ref="connectionsCanvas" :connections="computedConnections" />
-  </div> 
 </div>
 </template>
 
@@ -230,6 +229,8 @@ const unusedButtonsCount = computed(() => items.value.reduce((itemAcc, item) => 
   position: absolute;
   width: 100%;
   height: 100%;
+  top: 0;
+  z-index: -1;
 }
 
 .action-card {

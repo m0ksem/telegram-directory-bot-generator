@@ -14,15 +14,24 @@ const context = ref<CanvasRenderingContext2D>()
 const { getColor } = useColors()
 
 const safePoint = (point: Point | HTMLElement) => {
-  if ('x' in point && 'y' in point) {
-    return point
+  const { x: canvasX, y: canvasY, width: canvasWidth, height: canvasHeight } = canvas.value!.getBoundingClientRect()
+  const canvasScale = {
+    x: canvas.value!.offsetWidth / canvasWidth,
+    y: canvas.value!.offsetHeight / canvasHeight
   }
 
-  const {x, y, width, height} = point.getBoundingClientRect()
+  if ('x' in point && 'y' in point) {
+    return {
+      x: (point.x - canvasX) * canvasScale.x,
+      y: (point.y - canvasY) * canvasScale.y,
+    }
+  }
+
+  const { x, y, width, height } = point.getBoundingClientRect()
 
   return {
-    x: x + width / 2,
-    y: y + height / 2,
+    x: (x + width / 2 - canvasX) * canvasScale.x,
+    y: (y + height / 2 - canvasY) * canvasScale.y,
   }
 }
 

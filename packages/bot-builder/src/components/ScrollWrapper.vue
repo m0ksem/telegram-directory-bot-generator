@@ -5,30 +5,39 @@ import { useMouseScroll } from '../hooks/useMouseScroll'
 
 const position = ref({ x: 0, y: 0 })
 
-const { mousemove, buttons } = useMouse()
-
-watch(mousemove, (directions) => {
-  if (buttons.value.right) {
-    position.value.x += directions.x
-    position.value.y += directions.y
-  }
-})
+const { mousemove, buttons, mouse, normalize } = useMouse()
 
 const { scroll } = useMouseScroll(undefined, { 
-  max: 0.9,
+  max: 0.7,
   min: 0,
   speed: 0.1
 })
 
+const scale = computed(() => 1 - scroll.value)
+
 const scrollContentStyle = computed(() => {
-  const scrollValue = 1 - scroll.value
+  const posx = position.value.x / (1 / scale.value)
+  const posy = position.value.y / (1 / scale.value)
 
   return {
-    // width: `${scroll.value * 100}%`,
-    // height: `${scroll.value * 100}%`,
-    transform: `translateX(${position.value.x}px) translateY(${position.value.y}px) scale(${scrollValue}) translateX(-50%) translateY(-50%)`
+    transform: `translateX(${posx}px) translateY(${posy}px) scale(${scale.value}) translateX(-50%) translateY(-50%)`
   }
 })
+
+watch(mousemove, (directions) => {
+  if (buttons.value.right) {
+    position.value.x += directions.x * ((1 / scale.value))
+    position.value.y += directions.y * ((1 / scale.value))
+  }
+})
+
+const translateMouseCords = () => {
+  // TODO: Scroll into cords instead of center
+  return {
+    x: (normalize().x) / (scale.value) - position.value.x,
+    y: (normalize().y) / (scale.value) - position.value.y
+  }
+}
 </script>
 
 <template>
@@ -49,8 +58,8 @@ const scrollContentStyle = computed(() => {
 
   &__content {
     position: absolute;
-    height: 100%;
-    width: 100%;
+    height: 1000%;
+    width: 1000%;
     left: 50%;
     top: 50%;
     transform-origin: 0 0 0;
