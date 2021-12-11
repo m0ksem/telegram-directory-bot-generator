@@ -18,7 +18,7 @@ watch(doShowModal, (newVal) => {
     <va-button @click="doShowModal = !doShowModal">
       <slot />
     </va-button>
-    <va-modal v-model="doShowModal">
+    <va-modal v-model="doShowModal" cancel-text="">
       <template #header>
         <h2>Bot config</h2>
       </template>

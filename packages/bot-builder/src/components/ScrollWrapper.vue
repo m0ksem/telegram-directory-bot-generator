@@ -43,7 +43,7 @@ const translateMouseCords = () => {
 <template>
   <div class="scroll-wrapper">
     <div class="scroll-wrapper__content" :style="scrollContentStyle">
-      <slot></slot>
+      <slot v-bind="{ position, scale }"></slot>
     </div>
   </div>
 </template>
@@ -58,8 +58,8 @@ const translateMouseCords = () => {
 
   &__content {
     position: absolute;
-    height: 1000%;
-    width: 1000%;
+    height: 500%;
+    width: 500%;
     left: 50%;
     top: 50%;
     transform-origin: 0 0 0;

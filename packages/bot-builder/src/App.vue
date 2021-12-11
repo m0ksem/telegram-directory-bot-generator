@@ -10,7 +10,7 @@ import { useMouse } from './hooks/useMouse'
 import type { Item, ItemButton, Connection, StartConnection } from './types'
 import { defaultItems } from './store/items'
 
-const { toggle: toggleTheme } = useTheme()
+const { toggle: toggleTheme, isDark } = useTheme()
 
 const items = ref<Item[]>(defaultItems)
 
@@ -143,10 +143,10 @@ const createBotConfig = () => {
         </va-popover>
         
         <va-button class="mr-2" @click="createNewItem" icon="add"> Add </va-button>
-        <va-button class="mr-2" @click="toggleTheme" icon="palette"> Switch theme </va-button>
-
         <JsonConfigPopupButton :create-config="createBotConfig" class="mr-2"> Export to JSON </JsonConfigPopupButton>
-
+        <va-button class="mr-2" @click="toggleTheme" round :color="isDark ? '#f4f8fa' : '#202020'" text-color="white">
+          <va-icon name="palette" :color="!isDark ? '#f4f8fa' : '#202020'" />
+        </va-button>
         <va-button href="https://github.com/m0ksem/telegram-directory-bot-generator" round color="#000">
           <GithubLogo style="color: white; fill: white;"/> 
         </va-button>
