@@ -16,7 +16,7 @@ const { getColor } = useColors()
 const draw = () => {
   const ctx = context.value as CanvasRenderingContext2D
   ctx.lineWidth = 15;
-  ctx.strokeStyle = getColor('divider')
+  ctx.strokeStyle = getColor('gray')
   const w = canvas.value?.width || 0
   const h = canvas.value?.height || 0
   ctx.clearRect(0, 0, w, h)

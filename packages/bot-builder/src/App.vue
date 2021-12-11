@@ -2,6 +2,9 @@
 import { computed, ref } from 'vue'
 import DraggableCanvas from './components/DraggableCanvas.vue'
 import ConnectionsCanvas from './components/ConnectionsCanvas.vue'
+import { useTheme } from './hooks/useTheme'
+
+const { toggle: toggleTheme } = useTheme()
 
 type Point = { x: number, y: number }
 
@@ -96,19 +99,21 @@ const createNewItem = () => {
   <va-navbar>
     <template #right>
       <va-navbar-item>
-        <va-button @click="createNewItem">
-          Add
-        </va-button>
+        <va-button class="mr-2" @click="createNewItem"> Add </va-button>
+        <va-button @click="toggleTheme"> Switch theme </va-button>
       </va-navbar-item>
     </template>
   </va-navbar>
   <DraggableCanvas 
     v-model:items="items"
     v-model:mouse="mouse"
+    style="z-index: 1;"
   >
     <template #item="{ index, listeners, style, item }">
-      <va-card class="card">
-        <va-card-title v-on="listeners" :style="style">Action <span style="color: var(--va-info);">{{ item.data.id }}</span></va-card-title>
+      <va-card class="card" color="white">
+        <va-card-title v-on="listeners" :style="{ color: 'var(--va-info)' ,...style }" >
+        Action {{ item.data.id }}
+        </va-card-title>
         <va-card-content>
           <va-input label="Text" v-model="item.data.answer" />
         </va-card-content>
@@ -149,6 +154,7 @@ const createNewItem = () => {
   justify-content: center;
   flex-direction: column;
   align-items: center;
+  background: var(--va-background);
 }
 
 .va-navbar {
@@ -159,7 +165,6 @@ const createNewItem = () => {
   position: absolute;
   width: 100%;
   height: 100%;
-  z-index: -1;
 }
 
 .card {
