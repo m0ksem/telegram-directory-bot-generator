@@ -19,18 +19,23 @@ const { itemRefs, setItemRef } = useItemRefs<HTMLElement>()
 const { selected: selectedItemIndex, set: selectItem, unset: unSelectItem } = useSelected<number>()
 const { selected: hoveredItemIndex, set: hoverItem, unset: unHoverItem } = useSelected<number>()
 
-const canvas = ref()
-const clickOffset = ref({ x: 0, y: 0 })
+const canvas = ref<HTMLElement>()
+const clickTarget = ref({ x: 0, y: 0 })
 const onMouseMove = (e: MouseEvent) => {
-  const { x, y, width, height } = canvas.value.getBoundingClientRect()
+  const { x, y, width, height } = canvas.value!.getBoundingClientRect()
 
   if (selectedItemIndex.value === null) { return }
 
   const itemRef = itemRefs.value[selectedItemIndex.value]
 
+  const itemRect = itemRef.getBoundingClientRect()
+   
+  const widthScale = canvas.value!.offsetWidth / width
+  const heightScale = canvas.value!.offsetHeight / height
+
   const position = { 
-    x: e.x - x - (width / 2) - clickOffset.value.x + itemRef.offsetWidth / 2,
-    y: e.y - y - (height / 2) - clickOffset.value.y +  itemRef.offsetHeight / 2
+    x: (e.x - x - (width / 2) + itemRect.width / 2 ) * widthScale - (clickTarget.value.x) * widthScale,
+    y: (e.y - y - (height / 2) + itemRect.height / 2) * heightScale - (clickTarget.value.y) * heightScale
   }
 
   const selectedItem = computedItems.value[selectedItemIndex.value]
@@ -50,7 +55,7 @@ const onMouseDown = (e: MouseEvent) => {
   if (hoveredItemIndex.value === null) { return }
 
   const { x, y } = (e.target as HTMLElement).getBoundingClientRect()
-  clickOffset.value = { x: e.x - x, y: e.y - y }
+  clickTarget.value = { x: e.x - x, y: e.y - y }
 
   selectItem(hoveredItemIndex.value);
 }
@@ -104,15 +109,12 @@ const onItemMouseLeave = () => {
   .draggable-canvas-wrapper {
     height: 100%;
     width: 100%;
-    overflow-x: auto;
-    overflow-y: auto
   }
 
   .draggable-canvas {
     position: relative;
     height: 100%;
     width: 100%;
-    overflow: hidden;
 
     &__item {
       cursor: pointer;

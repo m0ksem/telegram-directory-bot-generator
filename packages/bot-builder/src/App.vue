@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import DraggableCanvas from './components/DraggableCanvas.vue'
 import ConnectionsCanvas from './components/ConnectionsCanvas.vue'
 import GithubLogo from './components/icons/GithubIcon.vue'
+import ScrollWrapper from './components/ScrollWrapper.vue'
 import { useTheme } from './hooks/useTheme'
 import { useMouse } from './hooks/useMouse'
 import type { Item, ItemButton, Connection, StartConnection } from './types'
@@ -131,71 +132,73 @@ const unusedButtonsCount = computed(() => items.value.reduce((itemAcc, item) => 
       </va-navbar-item>
     </template>
   </va-navbar>
-  <DraggableCanvas 
-    v-model:items="items"
-    v-model:mouse="mouse"
-    style="z-index: 1;"
-  >
-    <template #item="{ index, listeners, style, item }">
-      <va-card class="action-card pl-2" style="opacity: 0.94;">
-        <va-card-title v-on="listeners" :style="{ color: 'var(--va-primary)', ...style }" >
-        Action <span class="ml-2">{{ item.data.id + 1 }}</span>
-        </va-card-title>
-        <va-card-content>
-          <va-input label="Text" type="textarea" v-model="item.data.text" placeholder="Message text" />
-        </va-card-content>
-  
-        <va-card-content v-if="item.data.buttons.length">
-            <va-list-label color="primary">Buttons</va-list-label>
-            <va-card outlined v-for="button in (item.data.buttons as ItemButton[])"  style="margin: 0 -8px;">
-              <va-list-item class="bot-button">
-                  <va-button class="mr-2" icon="delete" color="danger" @click="removeButton(item, button)" />
-                  <div class="pr-2">
-                    <va-input
-                      v-model="button.text" 
-                      label="Button Text"
-                      placeholder="Button text"
-                    />
-                    <va-input
-                      v-if="button.url !== undefined"
-                      class="mt-2"
-                      v-model="button.url" 
-                      label="Button url"
-                      placeholder="Button url"
-                    /> 
-                  </div>
-                  <div class="bot-button__state-buttons">
-                    <va-button
-                      class="state-button"
-                      :class="{ 'state-button--selected':  button.url === undefined }"
-                      @click="connectFrom(item, button, $event); button.url = undefined"
-                      :icon="isButtonConnected(button) ? 'moving' : 'show_chart'" 
-                      :color="isButtonConnected(button) ? 'success' : 'warning'"
-                    />
-                    <va-button
-                      class="state-button"
-                      :class="{ 'state-button--selected':  button.url !== undefined }"
-                      @click="undoConnectFrom(); unconnectButton(button); button.url = ''"
-                      icon="link" 
-                    />
-                  </div>
-              </va-list-item>    
-          </va-card>        
-        </va-card-content>
-  
-        <va-card-actions align="between">
-          <va-button :disabled="items.length === 1" color="danger" @click="removeItem(index)" icon="delete" fab></va-button>
-          <va-button @click="addButton(item)" icon="add">Add button</va-button>
-        </va-card-actions>
-        <div class="connect-from-circle d-flex align--center justify--center" @click="connectTo(item, $event)">
-          <va-button
-            icon="fiber_manual_record"
-            :color="isItemConnected(item) ? 'success' : 'warning'"
-          />
-        </div>
-      </va-card>
-    </template>
-  </DraggableCanvas>
+  <ScrollWrapper>
+    <DraggableCanvas 
+      v-model:items="items"
+      v-model:mouse="mouse"
+      style="z-index: 1;"
+    >
+      <template #item="{ index, listeners, style, item }">
+        <va-card class="action-card" style="opacity: 0.94;">
+          <va-card-title v-on="listeners" :style="{ color: 'var(--va-primary)', background: 'rgba(0, 0, 0, 0.1)', ...style }" >
+          Action <span class="ml-2">{{ item.data.id + 1 }}</span>
+          </va-card-title>
+          <va-card-content class="pt-2">
+            <va-input label="Text" type="textarea" v-model="item.data.text" placeholder="Message text" />
+          </va-card-content>
+    
+          <va-card-content v-if="item.data.buttons.length">
+              <va-list-label color="primary">Buttons</va-list-label>
+              <va-card outlined v-for="button in (item.data.buttons as ItemButton[])"  style="margin: 0 -8px;">
+                <va-list-item class="bot-button">
+                    <va-button class="mr-2" icon="delete" color="danger" @click="removeButton(item, button)" />
+                    <div class="pr-2">
+                      <va-input
+                        v-model="button.text" 
+                        label="Button Text"
+                        placeholder="Button text"
+                      />
+                      <va-input
+                        v-if="button.url !== undefined"
+                        class="mt-2"
+                        v-model="button.url" 
+                        label="Button url"
+                        placeholder="Button url"
+                      /> 
+                    </div>
+                    <div class="bot-button__state-buttons">
+                      <va-button
+                        class="state-button"
+                        :class="{ 'state-button--selected':  button.url === undefined }"
+                        @click="connectFrom(item, button, $event); button.url = undefined"
+                        :icon="isButtonConnected(button) ? 'moving' : 'show_chart'" 
+                        :color="isButtonConnected(button) ? 'success' : 'warning'"
+                      />
+                      <va-button
+                        class="state-button"
+                        :class="{ 'state-button--selected':  button.url !== undefined }"
+                        @click="undoConnectFrom(); unconnectButton(button); button.url = ''"
+                        icon="link" 
+                      />
+                    </div>
+                </va-list-item>    
+            </va-card>        
+          </va-card-content>
+    
+          <va-card-actions align="between">
+            <va-button :disabled="items.length === 1" color="danger" @click="removeItem(index)" icon="delete" fab></va-button>
+            <va-button @click="addButton(item)" icon="add">Add button</va-button>
+          </va-card-actions>
+          <div class="connect-to-circle d-flex align--center justify--center" @click="connectTo(item, $event)">
+            <va-button
+              icon="fiber_manual_record"
+              :color="isItemConnected(item) ? 'success' : 'warning'"
+            />
+          </div>
+        </va-card>
+      </template>
+    </DraggableCanvas>    
+  </ScrollWrapper>
 
   <div class="connections">
     <ConnectionsCanvas ref="connectionsCanvas" :connections="computedConnections" />
@@ -231,20 +234,10 @@ const unusedButtonsCount = computed(() => items.value.reduce((itemAcc, item) => 
 
 .action-card {
   position: relative;
-  .connect-from-circle {
-    position: absolute;
-    left: -16px;
-    top: 50%;
-    height: 24px;
-    width: 24px;
-    border-radius: 50%;
-    transform: translateY(-50%);
-  }
-
   .connect-to-circle {
     position: absolute;
-    right: -16px;
-    top: 50%;
+    left: -16px;
+    top: 30px;
     height: 24px;
     width: 24px;
     border-radius: 50%;
