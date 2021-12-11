@@ -1,14 +1,12 @@
 {
-  "name": "bot-builder",
-  "version": "1.0.0",
-  "main": "index.js",
   "repository": "https://github.com/m0ksem/telegram-directory-bot-generator.git",
   "author": "m0ksem <m0ksem1337@gmail.com>",
   "private": "true",
   "workspaces": ["packages/*"],
   "scripts": {
     "serve:bot": "yarn workspace bot serve",
-    "serve:builder": "yarn workspace bot-builder dev",
+    "serve:builder": "yarn workspace bot-builder serve",
+    "preview:builder": "yarn workspace bot-builder preview",
     "build:builder": "yarn workspace bot-builder build"
   }
 }

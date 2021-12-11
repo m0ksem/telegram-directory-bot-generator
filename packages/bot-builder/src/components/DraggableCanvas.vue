@@ -65,7 +65,7 @@ const onItemMouseEnter = (index: number) => {
 
 const onItemMouseLeave = () => {
   unHoverItem();
-  timer = setTimeout(() => { unSelectItem(); }, 2000)
+  timer = window.setTimeout(() => { unSelectItem(); }, 2000)
 }
 </script>
 
