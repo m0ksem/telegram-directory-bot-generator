@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, PropType, watch } from 'vue'
+import { ref, PropType } from 'vue'
 import { useSelected } from '../hooks/useSelected'
 import { useItemRefs } from '../hooks/useItemRefs'
 import { useSyncProp } from '../hooks/useSyncProp'
@@ -16,7 +16,7 @@ const [computedItems] = useSyncProp(props, 'items', emit)
 
 const { itemRefs, setItemRef } = useItemRefs<HTMLElement>()
 
-const { selected: selectedItem, set: selectItem, unset: unSelectItem } = useSelected<Item>()
+const { selected: selectedItemIndex, set: selectItem, unset: unSelectItem } = useSelected<number>()
 const { selected: hoveredItemIndex, set: hoverItem, unset: unHoverItem } = useSelected<number>()
 
 const canvas = ref()
@@ -24,16 +24,18 @@ const clickOffset = ref({ x: 0, y: 0 })
 const onMouseMove = (e: MouseEvent) => {
   const { x, y, width, height } = canvas.value.getBoundingClientRect()
 
-  if (!selectedItem.value || hoveredItemIndex.value === null) { return }
+  if (selectedItemIndex.value === null) { return }
 
-  const itemRef = itemRefs.value[hoveredItemIndex.value]
+  const itemRef = itemRefs.value[selectedItemIndex.value]
 
   const position = { 
     x: e.x - x - (width / 2) - clickOffset.value.x + itemRef.offsetWidth / 2,
     y: e.y - y - (height / 2) - clickOffset.value.y +  itemRef.offsetHeight / 2
   }
 
-  selectedItem.value.position = position
+  const selectedItem = computedItems.value[selectedItemIndex.value]
+
+  selectedItem.position = position
 }
 
 const getItemStyle = (item: Item) => {
@@ -50,24 +52,21 @@ const onMouseDown = (e: MouseEvent) => {
   const { x, y } = (e.target as HTMLElement).getBoundingClientRect()
   clickOffset.value = { x: e.x - x, y: e.y - y }
 
-  selectItem(computedItems.value[hoveredItemIndex.value]);
+  selectItem(hoveredItemIndex.value);
 }
 
 const onMouseUp = () => { unSelectItem(); }
 
 let timer = -1
-const onItemMouseEnter = (item: Item, index: number) => { 
+const onItemMouseEnter = (index: number) => { 
   clearTimeout(timer)
   hoverItem(index)
 }
 
-const onItemMouseLeave = (item: Item) => {
+const onItemMouseLeave = () => {
   unHoverItem();
   timer = setTimeout(() => { unSelectItem(); }, 2000)
 }
-
-watch(selectedItem, (newVal) => { emit('update:selected', newVal) })
-watch(hoveredItemIndex, (newVal) => { emit('update:hovered', newVal) })
 </script>
 
 <template>
@@ -90,7 +89,7 @@ watch(hoveredItemIndex, (newVal) => { emit('update:hovered', newVal) })
       >
         <slot name="item" v-bind="{ 
           index, item, style: { cursor: 'move' }, 
-          listeners: { mouseenter: () => onItemMouseEnter(item, index), mouseleave: () => onItemMouseLeave(item)} 
+          listeners: { mouseenter: () => onItemMouseEnter(index), mouseleave: () => onItemMouseLeave()} 
         }">
           <div class="draggable-canvas__item-content">
             {{ item.position }}

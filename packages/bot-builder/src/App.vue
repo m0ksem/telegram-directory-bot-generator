@@ -72,8 +72,12 @@ const connectTo = (item: Item, event: MouseEvent) => {
     button: startConnection.value.button
   })
 
+  startConnection.value.button.toId = item.data.id
   startConnection.value = null
 }
+
+const isButtonConnected = (button: ItemButton) => button.toId !== -1
+const isItemConnected = (item: Item) => connections.value.some((con) => con.end.item.data.id === item.data.id)
 </script>
 
 <template>
@@ -97,7 +101,7 @@ const connectTo = (item: Item, event: MouseEvent) => {
         Action {{ item.data.id }}
         </va-card-title>
         <va-card-content>
-          <va-input label="Text" v-model="item.data.answer" />
+          <va-input label="Text" v-model="item.data.text" placeholder="Message text" />
         </va-card-content>
   
         <va-card-content v-if="item.data.buttons.length">
@@ -105,10 +109,17 @@ const connectTo = (item: Item, event: MouseEvent) => {
           <va-list-item v-for="button in item.data.buttons" class="button">
             <va-button icon="delete" color="danger" @click="removeButton(item, button)" />
             <div class="px-2">
-              <va-input v-model="button.text" :label="button.toId === -1 ? 'Not connected': `Connected to ${button.toId}`" />             
+              <va-input
+                v-model="button.text" 
+                :label="isButtonConnected(button) ? `Connected to ${button.toId}` : 'Not connected'"
+                placeholder="Button text"
+              />             
             </div>
             <div @click="connectFrom(item, button, $event)">
-              <va-button :icon="button.toId === -1 ? 'show_chart' : 'moving'" />
+              <va-button 
+                :icon="isButtonConnected(button) ? 'moving' : 'show_chart'" 
+                :color="isButtonConnected(button) ? 'success' : 'warning'"
+              />
             </div>
           </va-list-item>
         </va-card-content>
@@ -118,7 +129,10 @@ const connectTo = (item: Item, event: MouseEvent) => {
           <va-button @click="addButton(item)">Add button</va-button>
         </va-card-actions>
         <div class="connect-from-circle d-flex align--center justify--center" @click="connectTo(item, $event)">
-          <va-button icon="fiber_manual_record" />
+          <va-button 
+            icon="fiber_manual_record"
+            :color="isItemConnected(item) ? 'success' : 'warning'"
+          />
         </div>
       </va-card>
     </template>
