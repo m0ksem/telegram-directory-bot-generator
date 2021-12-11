@@ -85,8 +85,8 @@ const isItemConnected = (item: Item) => connections.value.some((con) => con.end.
   <va-navbar>
     <template #right>
       <va-navbar-item>
-        <va-button class="mr-2" @click="createNewItem"> Add </va-button>
-        <va-button @click="toggleTheme"> Switch theme </va-button>
+        <va-button class="mr-2" @click="createNewItem" icon="add"> Add </va-button>
+        <va-button @click="toggleTheme" icon="palette"> Switch theme </va-button>
       </va-navbar-item>
     </template>
   </va-navbar>
@@ -96,8 +96,8 @@ const isItemConnected = (item: Item) => connections.value.some((con) => con.end.
     style="z-index: 1;"
   >
     <template #item="{ index, listeners, style, item }">
-      <va-card class="card" color="white">
-        <va-card-title v-on="listeners" :style="{ color: 'var(--va-info)', ...style }" >
+      <va-card class="action-card">
+        <va-card-title v-on="listeners" :style="{ color: 'var(--va-primary)', ...style }" >
         Action {{ item.data.id }}
         </va-card-title>
         <va-card-content>
@@ -105,16 +105,16 @@ const isItemConnected = (item: Item) => connections.value.some((con) => con.end.
         </va-card-content>
   
         <va-card-content v-if="item.data.buttons.length">
-          <va-list-label>Buttons</va-list-label>
+          <va-list-label color="primary">Buttons</va-list-label>
           <va-list-item v-for="button in item.data.buttons" class="button">
-            <va-button icon="delete" color="danger" @click="removeButton(item, button)" />
-            <div class="px-2">
+            <div class="pr-2">
               <va-input
                 v-model="button.text" 
                 :label="isButtonConnected(button) ? `Connected to ${button.toId}` : 'Not connected'"
                 placeholder="Button text"
               />             
             </div>
+            <va-button class="mr-2" icon="delete" color="danger" @click="removeButton(item, button)" />
             <div @click="connectFrom(item, button, $event)">
               <va-button 
                 :icon="isButtonConnected(button) ? 'moving' : 'show_chart'" 
@@ -125,8 +125,8 @@ const isItemConnected = (item: Item) => connections.value.some((con) => con.end.
         </va-card-content>
   
         <va-card-actions align="between">
-          <va-button color="danger" @click="removeItem(index)">Delete</va-button>
-          <va-button @click="addButton(item)">Add button</va-button>
+          <va-button color="danger" @click="removeItem(index)" icon="delete" fab></va-button>
+          <va-button @click="addButton(item)" icon="add">Add button</va-button>
         </va-card-actions>
         <div class="connect-from-circle d-flex align--center justify--center" @click="connectTo(item, $event)">
           <va-button 
@@ -170,7 +170,7 @@ const isItemConnected = (item: Item) => connections.value.some((con) => con.end.
   height: 100%;
 }
 
-.card {
+.action-card {
   position: relative;
   .connect-from-circle {
     position: absolute;

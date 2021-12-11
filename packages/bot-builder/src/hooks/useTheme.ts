@@ -9,16 +9,17 @@ export const useTheme = () => {
   const toDark = () => {
     isDark.value = true
     setColors({
-      primary: '#290bff',
-      secondary: '#6863f8',
-      background: '#0b0f12',
-      success: '#00a35f',
+      primary: '#3e4df7',
+      secondary: '#474554',
+      background: '#0c121c',
+      success: '#60a315',
       info: '#827ef3',
-      danger: '#ef1e00',
-      warning: '#e1cb00',
+      danger: '#f00a67',
+      warning: '#febf6d',
       gray: '#aeaeb1',
       dark: '#ffffff',
       white: '#020000',
+      cardColor: '#060609',
     })
   }
 
@@ -26,21 +27,26 @@ export const useTheme = () => {
     isDark.value = false
     setColors({
       primary: '#2C82E0',
-      secondary: '#767C88',
+      secondary: '#cbe4f0',
       background: '#f4f8fa',
       success: '#40e583',
       info: '#2c82e0',
       danger: '#DE1041',
       warning: '#FFAC0A',
       gray: '#babfc2',
-      dark: '#1B1A1F',
+      dark: '#0a1622',
       white: '#ffffff',
+      cardColor: '#fcfdff',
     })
   }
 
   const toggle = () => isDark.value ? toWhite() : toDark()
 
-  toWhite()
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    toDark()
+  } else {
+    toWhite()
+  }
 
   return {
     isDark,
