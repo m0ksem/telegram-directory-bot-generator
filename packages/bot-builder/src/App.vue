@@ -5,7 +5,7 @@ import ConnectionsCanvas from './components/ConnectionsCanvas.vue'
 import GithubLogo from './components/icons/GithubIcon.vue'
 import { useTheme } from './hooks/useTheme'
 import { useMouse } from './hooks/useMouse'
-import { Item, ItemButton, Connection, StartConnection } from './types'
+import type { Item, ItemButton, Connection, StartConnection } from './types'
 import { defaultItems } from './store/items'
 
 const { toggle: toggleTheme } = useTheme()
@@ -23,9 +23,7 @@ const createNewItem = () => {
   })
 }
 
-const removeItem = (index: number) => {
-  items.value = items.value.filter((i, index) => index !== index)
-}
+const removeItem = (index: number) => { items.value = items.value.filter((i, idx) => idx !== index) }
 
 const addButton = (item: Item) => { item.data.buttons.push({ text: '', id: `${item.data.id}-${item.data.buttons.length}` }) }
 const removeButton = (item: Item, button: ItemButton) => { 
@@ -36,8 +34,10 @@ const removeButton = (item: Item, button: ItemButton) => {
 const connections = ref<{ start: Connection, end: Connection, button: ItemButton }[]>([])
 
 const connectionsCanvas = ref()
-const { mouse } = useMouse(connectionsCanvas)
+const { mouse, onRightClick } = useMouse(connectionsCanvas)
 const startConnection = ref<StartConnection | null>(null)
+
+onRightClick(() => undoConnectFrom())
 
 const computedConnections = computed(() => {
   const activeConnections = connections.value.map((con) => ({
@@ -73,6 +73,12 @@ const connectTo = (item: Item, event: MouseEvent) => {
   startConnection.value = null
 }
 
+const unconnectButton = (button: ItemButton) => {
+  connections.value = connections.value.filter((conn) => conn.button.id !== button.id)
+}
+
+const undoConnectFrom = () => { startConnection.value = null }
+
 const isButtonConnected = (button: ItemButton) => connections.value.some((con) => con.button.id === button.id)
 const isItemConnected = (item: Item) => connections.value.some((con) => con.end.item.data.id === item.data.id)
 
@@ -82,10 +88,13 @@ const unconnectedItemsCount = computed(() => items.value.reduce((acc, item) => {
   return connections.value.some((con) => con.end.item.data.id === item.data.id) ? acc : acc + 1
 }, 0))
 
-const unusedButtonsCount = computed(() => items.value.reduce((acc, item) => {
+const unusedButtonsCount = computed(() => items.value.reduce((itemAcc, item) => {
   return item.data.buttons
-    .reduce((bacc, btn) => connections.value
-      .some((con) => con.button.id === btn.id)? bacc : bacc + 1, 0) + acc
+    .reduce((buttonAcc, btn) => {
+      if (btn.url !== undefined) { return 0 }
+
+      return connections.value.some((con) => con.button.id === btn.id) ? buttonAcc : buttonAcc + 1
+    }, 0) + itemAcc
 }, 0))
 </script>
 
@@ -101,12 +110,12 @@ const unusedButtonsCount = computed(() => items.value.reduce((acc, item) => {
       <va-navbar-item class="d-flex align--center">
         <va-popover v-if="unconnectedItemsCount !== 0" :message="`${unconnectedItemsCount} item(s) unconnected`" color="background">
           <va-badge overlap :text="unconnectedItemsCount" class="mr-4" color="warning">
-            <va-icon name="link_off" color="gray" />
+            <va-icon name="comments_disabled" color="gray" />
           </va-badge>
         </va-popover>
         <va-popover v-if="unusedButtonsCount !== 0" :message="`${unusedButtonsCount} button(s) unused`" color="background">
           <va-badge overlap :text="unusedButtonsCount" class="mr-4" color="warning">
-            <va-icon name="comments_disabled" color="gray" />
+            <va-icon name="link_off" color="gray" />
           </va-badge>
         </va-popover>
         
@@ -124,7 +133,7 @@ const unusedButtonsCount = computed(() => items.value.reduce((acc, item) => {
     style="z-index: 1;"
   >
     <template #item="{ index, listeners, style, item }">
-      <va-card class="action-card" style="opacity: 0.94;">
+      <va-card class="action-card pl-2" style="opacity: 0.94;">
         <va-card-title v-on="listeners" :style="{ color: 'var(--va-primary)', ...style }" >
         Action <span class="ml-2">{{ item.data.id + 1 }}</span>
         </va-card-title>
@@ -133,32 +142,49 @@ const unusedButtonsCount = computed(() => items.value.reduce((acc, item) => {
         </va-card-content>
   
         <va-card-content v-if="item.data.buttons.length">
-          <va-list-label color="primary">Buttons</va-list-label>
-          <va-list-item v-for="button in item.data.buttons" class="button">
-            <div class="pr-2">
-              <va-input
-                v-model="button.text" 
-                label="Button Text"
-                placeholder="Button text"
-              />             
-            </div>
-            <va-button class="mr-2" icon="delete" color="danger" @click="removeButton(item, button)" />
-            <div @click="connectFrom(item, button, $event)">
-              <va-button 
-                :icon="isButtonConnected(button) ? 'moving' : 'show_chart'" 
-                :color="isButtonConnected(button) ? 'success' : 'warning'"
-              />
-            </div>
-          </va-list-item>
+            <va-list-label color="primary">Buttons</va-list-label>
+            <va-card outlined v-for="button in (item.data.buttons as ItemButton[])"  style="margin: 0 -8px;">
+              <va-list-item class="bot-button">
+                  <va-button class="mr-2" icon="delete" color="danger" @click="removeButton(item, button)" />
+                  <div class="pr-2">
+                    <va-input
+                      v-model="button.text" 
+                      label="Button Text"
+                      placeholder="Button text"
+                    />
+                    <va-input
+                      v-if="button.url !== undefined"
+                      class="mt-2"
+                      v-model="button.url" 
+                      label="Button url"
+                      placeholder="Button url"
+                    /> 
+                  </div>
+                  <div class="bot-button__state-buttons">
+                    <va-button
+                      class="state-button"
+                      :class="{ 'state-button--selected':  button.url === undefined }"
+                      @click="connectFrom(item, button, $event); button.url = undefined"
+                      :icon="isButtonConnected(button) ? 'moving' : 'show_chart'" 
+                      :color="isButtonConnected(button) ? 'success' : 'warning'"
+                    />
+                    <va-button
+                      class="state-button"
+                      :class="{ 'state-button--selected':  button.url !== undefined }"
+                      @click="undoConnectFrom(); unconnectButton(button); button.url = ''"
+                      icon="link" 
+                    />
+                  </div>
+              </va-list-item>    
+          </va-card>        
         </va-card-content>
   
         <va-card-actions align="between">
-          <va-button :disabled="item.data.id === 0" color="danger" @click="removeItem(index)" icon="delete" fab></va-button>
+          <va-button :disabled="items.length === 1" color="danger" @click="removeItem(index)" icon="delete" fab></va-button>
           <va-button @click="addButton(item)" icon="add">Add button</va-button>
         </va-card-actions>
         <div class="connect-from-circle d-flex align--center justify--center" @click="connectTo(item, $event)">
           <va-button
-            v-if="item.data.id !== 0"
             icon="fiber_manual_record"
             :color="isItemConnected(item) ? 'success' : 'warning'"
           />
@@ -221,8 +247,30 @@ const unusedButtonsCount = computed(() => items.value.reduce((acc, item) => {
     transform: translateY(-50%);
   }
 
-  .button {
+  .bot-button {
     position: relative;
+    align-items: flex-start;
+
+    &__state-buttons {
+      position: relative;
+      padding: 12px;
+      transform: translateY(10%);
+      & > .state-button {
+        position: absolute;
+        transform: translateX(50%) translateY(-10%);
+        left: 0;
+        top: 0;
+        z-index: 0;
+        &.state-button--selected {
+          margin: 0;
+          position: relative;
+          transform: none;
+        }
+      }
+      & > .state-button--selected {
+        z-index: 1;
+      }
+    }
   }
 }
 
