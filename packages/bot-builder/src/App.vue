@@ -4,7 +4,7 @@ import DraggableCanvas from './components/DraggableCanvas.vue'
 import ConnectionsCanvas from './components/ConnectionsCanvas.vue'
 import { useTheme } from './hooks/useTheme'
 import { useMouse } from './hooks/useMouse'
-import { Point, Item, ItemButton, Connection, StartConnection } from './types'
+import { Item, ItemButton, Connection, StartConnection } from './types'
 import { defaultItems } from './store/items'
 
 const { toggle: toggleTheme } = useTheme()
@@ -26,7 +26,7 @@ const removeItem = (index: number) => {
   items.value = items.value.filter((i, index) => index !== index)
 }
 
-const addButton = (item: Item) => { item.data.buttons.push({ text: '', id: item.data.buttons.length }) }
+const addButton = (item: Item) => { item.data.buttons.push({ text: '', id: `${item.data.id}-${item.data.buttons.length}` }) }
 const removeButton = (item: Item, button: ItemButton) => { 
   item.data.buttons = item.data.buttons.filter((b) => b.id !== button.id)
   connections.value = connections.value.filter((conn) => conn.button.id !== button.id )
@@ -74,6 +74,18 @@ const connectTo = (item: Item, event: MouseEvent) => {
 
 const isButtonConnected = (button: ItemButton) => connections.value.some((con) => con.button.id === button.id)
 const isItemConnected = (item: Item) => connections.value.some((con) => con.end.item.data.id === item.data.id)
+
+const unconnectedItemsCount = computed(() => items.value.reduce((acc, item) => {
+  if (item.data.id === 0) { return acc } 
+
+  return connections.value.some((con) => con.end.item.data.id === item.data.id) ? acc : acc + 1
+}, 0))
+
+const unusedButtonsCount = computed(() => items.value.reduce((acc, item) => {
+  return item.data.buttons
+    .reduce((bacc, btn) => connections.value
+      .some((con) => con.button.id === btn.id)? bacc : bacc + 1, 0) + acc
+}, 0))
 </script>
 
 <template>
@@ -85,7 +97,18 @@ const isItemConnected = (item: Item) => connections.value.some((con) => con.end.
       </va-navbar-item>
     </template>
     <template #right>
-      <va-navbar-item>
+      <va-navbar-item class="d-flex align--center">
+        <va-popover v-if="unconnectedItemsCount !== 0" :message="`${unconnectedItemsCount} item(s) unconnected`" color="background">
+          <va-badge overlap :text="unconnectedItemsCount" class="mr-4" color="warning">
+            <va-icon name="link_off" color="gray" />
+          </va-badge>
+        </va-popover>
+        <va-popover v-if="unusedButtonsCount !== 0" :message="`${unusedButtonsCount} button(s) unused`" color="background">
+          <va-badge overlap :text="unusedButtonsCount" class="mr-4" color="warning">
+            <va-icon name="comments_disabled" color="gray" />
+          </va-badge>
+        </va-popover>
+        
         <va-button class="mr-2" @click="createNewItem" icon="add"> Add </va-button>
         <va-button @click="toggleTheme" icon="palette"> Switch theme </va-button>
       </va-navbar-item>
@@ -111,7 +134,7 @@ const isItemConnected = (item: Item) => connections.value.some((con) => con.end.
             <div class="pr-2">
               <va-input
                 v-model="button.text" 
-                :label="isButtonConnected(button) ? `Connected to ${button.toId}` : 'Not connected'"
+                label="Button Text"
                 placeholder="Button text"
               />             
             </div>
@@ -126,11 +149,12 @@ const isItemConnected = (item: Item) => connections.value.some((con) => con.end.
         </va-card-content>
   
         <va-card-actions align="between">
-          <va-button color="danger" @click="removeItem(index)" icon="delete" fab></va-button>
+          <va-button :disabled="item.data.id === 0" color="danger" @click="removeItem(index)" icon="delete" fab></va-button>
           <va-button @click="addButton(item)" icon="add">Add button</va-button>
         </va-card-actions>
         <div class="connect-from-circle d-flex align--center justify--center" @click="connectTo(item, $event)">
-          <va-button 
+          <va-button
+            v-if="item.data.id !== 0"
             icon="fiber_manual_record"
             :color="isItemConnected(item) ? 'success' : 'warning'"
           />
@@ -179,7 +203,6 @@ const isItemConnected = (item: Item) => connections.value.some((con) => con.end.
     top: 50%;
     height: 24px;
     width: 24px;
-    background: var(--va-danger);
     border-radius: 50%;
     transform: translateY(-50%);
   }
@@ -190,7 +213,6 @@ const isItemConnected = (item: Item) => connections.value.some((con) => con.end.
     top: 50%;
     height: 24px;
     width: 24px;
-    background: var(--va-success);
     border-radius: 50%;
     transform: translateY(-50%);
   }

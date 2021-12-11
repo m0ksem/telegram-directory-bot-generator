@@ -2,7 +2,7 @@ export type Point = { x: number, y: number }
 
 export type ItemButton = {
   text: string,
-  id: number,
+  id: number | string,
   el?: HTMLElement, 
 }
 
