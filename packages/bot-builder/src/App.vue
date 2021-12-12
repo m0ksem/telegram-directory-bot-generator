@@ -8,7 +8,8 @@ import ExportJsonConfigPopupButton from './components/ExportJsonConfigPopupButto
 import ImportJsonConfigPopupButton from './components/ImportJsonConfigPopupButton.vue'
 import { useTheme } from './hooks/useTheme'
 import { useMouse } from './hooks/useMouse'
-import type { BuilderMessage, BuilderButton, Connection, StartConnection } from './types'
+import { useHash } from './hooks/useHash'
+import type { BuilderMessage, BuilderButton, Connection, StartConnection, BuilderButtonRow } from './types'
 import { getDefaultItems } from './store/items'
 
 const isLoading = ref(false)
@@ -17,10 +18,12 @@ const { toggle: toggleTheme, isDark } = useTheme()
 
 const items = ref<BuilderMessage[]>(getDefaultItems())
 
+const { generateHash } = useHash()
+
 const createNewItem = () => {
   items.value.push({
     text: '',
-    id: String(items.value.length),
+    id: generateHash(),
     buttons: [[]],
     position: { x: 0, y: 0 }
   })
@@ -33,15 +36,18 @@ const removeItem = (index: number) => {
 }
 
 const addButton = (item: BuilderMessage) => { 
-  item.buttons[0].push({
+  item.buttons.push([{
     text: '', 
     messageId: '',
-    id: `${item.id}-${item.buttons[0].length}`,
-  }) 
+    id: `${item.id}-${generateHash()}`,
+  }]) 
 }
 
 const removeButton = (item: BuilderMessage, button: BuilderButton) => {
-  item.buttons[0] = item.buttons[0].filter((b: BuilderButton) => b.id !== button.id)
+  item.buttons = item.buttons
+    .map((row: BuilderButtonRow) => row.filter((b: BuilderButton) => b.id !== button.id))
+    .filter((row: BuilderButtonRow) => row.length > 0)
+
   connections.value = connections.value.filter((conn) => conn.button.id !== button.id )
 }
 
@@ -106,11 +112,16 @@ const unconnectedItemsCount = computed(() => items.value.reduce((acc, item) => {
 }, 0))
 
 const unusedButtonsCount = computed(() => items.value.reduce((itemAcc, item) => {
-  return item.buttons[0]
-    .reduce((buttonAcc, btn: BuilderButton) => {
-      if ('url' in btn) { return 0 }
+  if (!item.buttons) { return 0 }
+  return item.buttons
+    .reduce((acc, buttonRow: BuilderButtonRow) => {
+      if (!buttonRow) { return 0 }
 
-      return connections.value.some((con) => con.button.id === btn.id) ? buttonAcc : buttonAcc + 1
+      return acc + buttonRow.reduce((buttonAcc, btn: BuilderButton) => {
+          if ('url' in btn) { return 0 }
+
+          return connections.value.some((con) => con.button.id === btn.id) ? buttonAcc : buttonAcc + 1
+        }, 0)
     }, 0) + itemAcc
 }, 0))
 
@@ -119,11 +130,14 @@ const createBotConfig = () => {
     return {
       text: item.text,
       id: item.id,
-      buttons: item.buttons[0].map((button) => ({
-        text: button.text,
-        messageId: 'messageId' in button ? button.messageId : undefined,
-        url: 'url' in button ? button.url : undefined
-      })),
+      buttons: item.buttons
+        .map((buttonRow) => 
+          buttonRow.map((button) => ({
+            text: button.text,
+            messageId: 'messageId' in button ? button.messageId : undefined,
+            url: 'url' in button ? button.url : undefined
+          }))
+        ),
       position: item.position,
     }
   })
@@ -135,17 +149,19 @@ const setItemConnectRef = (item: BuilderMessage) => (el: any) => { item.el = el 
 
 const generateConnections = () => {
   items.value.forEach((startItem) => {
-    startItem.buttons[0].forEach((button: BuilderButton) => {
-      if (!('messageId' in button)) { return }
+    startItem.buttons.forEach((buttonRow) => {
+      buttonRow.forEach((button) => {
+        if (!('messageId' in button)) { return }
 
-      const endItem = items.value.find((item) => String(item.id) === button.messageId)
+        const endItem = items.value.find((item) => String(item.id) === button.messageId)
 
-      if (!endItem) { return }
+        if (!endItem) { return }
 
-      connections.value.push({
-        start: { item: startItem, el: button.el },
-        end: { item: endItem, el: endItem.el },
-        button,
+        connections.value.push({
+          start: { item: startItem, el: button.el },
+          end: { item: endItem, el: endItem.el },
+          button,
+        })
       })
     })
   })
@@ -228,41 +244,43 @@ const save = () => {
     
           <va-card-content v-if="item.buttons.length">
               <va-list-label color="primary">Buttons</va-list-label>
-              <va-card outlined v-for="button in (item.buttons[0] as BuilderButton[])" style="margin: 0 -8px;" class="mb-1">
-                <va-list-item class="bot-button">
-                    <va-button class="mr-2" icon="delete" color="danger" @click="removeButton(item, button)" />
-                    <div class="pr-2">
-                      <va-input
-                        v-model="button.text"
-                        label="Button Text"
-                        placeholder="Button text"
-                      />
-                      <va-input
-                        v-if="button.url !== undefined"
-                        class="mt-2"
-                        v-model="button.url" 
-                        label="Button url"
-                        placeholder="Button url"
-                      /> 
-                    </div>
-                    <div class="bot-button__state-buttons">
-                      <va-button
-                        class="state-button"
-                        :class="{ 'state-button--selected':  button.url === undefined }"
-                        @click="connectFrom(item, button, $event); button.url = undefined"
-                        :icon="isButtonConnected(button) ? 'moving' : 'show_chart'" 
-                        :color="isButtonConnected(button) ? 'success' : 'warning'"
-                        :ref="setButtonRef(button)"
-                      />
-                      <va-button
-                        class="state-button"
-                        :class="{ 'state-button--selected':  button.url !== undefined }"
-                        @click="undoConnectFrom(); unconnectButton(button); button.url = ''"
-                        icon="link" 
-                      />
-                    </div>
-                </va-list-item>    
-            </va-card>        
+              <template v-for="buttonRow in (item as BuilderMessage).buttons">
+                <va-card outlined v-for="button in buttonRow" style="margin: 0 -8px;" class="mb-1">
+                  <va-list-item class="bot-button">
+                      <va-button class="mr-2" icon="delete" color="danger" @click="removeButton(item, button)" />
+                      <div class="pr-2">
+                        <va-input
+                          v-model="button.text"
+                          label="Button Text"
+                          placeholder="Button text"
+                        />
+                        <va-input
+                          v-if="button.url !== undefined"
+                          class="mt-2"
+                          v-model="button.url" 
+                          label="Button url"
+                          placeholder="Button url"
+                        /> 
+                      </div>
+                      <div class="bot-button__state-buttons">
+                        <va-button
+                          class="state-button"
+                          :class="{ 'state-button--selected':  button.url === undefined }"
+                          @click="connectFrom(item, button, $event); button.url = undefined"
+                          :icon="isButtonConnected(button) ? 'moving' : 'show_chart'" 
+                          :color="isButtonConnected(button) ? 'success' : 'warning'"
+                          :ref="setButtonRef(button)"
+                        />
+                        <va-button
+                          class="state-button"
+                          :class="{ 'state-button--selected':  button.url !== undefined }"
+                          @click="undoConnectFrom(); unconnectButton(button); button.url = ''"
+                          icon="link" 
+                        />
+                      </div>
+                  </va-list-item>
+                </va-card>
+              </template>
           </va-card-content>
     
           <va-card-actions align="between">

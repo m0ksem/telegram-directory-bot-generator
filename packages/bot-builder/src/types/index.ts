@@ -12,7 +12,7 @@ export type BuilderButton = BotButton & {
 
 export type BuilderButtonRow = BuilderButton[]
 
-export type BuilderMessage = BotMessage & {
+export type BuilderMessage = Omit<BotMessage, 'buttons'> & {
   buttons: BuilderButtonRow[]
   position: Point,
   el?: HTMLElement
