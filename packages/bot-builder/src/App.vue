@@ -164,8 +164,6 @@ const onConfigUpdate = (config: any) => {
       generateConnections()
     })
   })
-
-  // setTimeout(() => { isLoading.value = false;  }, 1000)
 }
 
 const save = () => {
@@ -224,7 +222,7 @@ const save = () => {
     
           <va-card-content v-if="item.buttons.length">
               <va-list-label color="primary">Buttons</va-list-label>
-              <va-card outlined v-for="button in (item.buttons as ItemButton[])" style="margin: 0 -8px;">
+              <va-card outlined v-for="button in (item.buttons as ItemButton[])" style="margin: 0 -8px;" class="mb-1">
                 <va-list-item class="bot-button">
                     <va-button class="mr-2" icon="delete" color="danger" @click="removeButton(item, button)" />
                     <div class="pr-2">
