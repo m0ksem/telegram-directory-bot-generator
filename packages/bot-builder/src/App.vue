@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch, getCurrentInstance, nextTick } from 'vue'
 import DraggableCanvas from './components/DraggableCanvas.vue'
 import ConnectionsCanvas from './components/ConnectionsCanvas.vue'
 import GithubLogo from './components/icons/GithubIcon.vue'
@@ -10,6 +10,8 @@ import { useTheme } from './hooks/useTheme'
 import { useMouse } from './hooks/useMouse'
 import type { Item, ItemButton, Connection, StartConnection } from './types'
 import { getDefaultItems } from './store/items'
+
+const isLoading = ref(false)
 
 const { toggle: toggleTheme, isDark } = useTheme()
 
@@ -105,7 +107,9 @@ const unusedButtonsCount = computed(() => items.value.reduce((itemAcc, item) => 
     }, 0) + itemAcc
 }, 0))
 
-const createBotConfig = () => {
+const createBotConfig = (clean: boolean = false) => {
+  if (!clean) { return items.value }
+
   return items.value.map((item) => {
     return {
       text: item.text,
@@ -119,7 +123,7 @@ const createBotConfig = () => {
   })
 }
 
-const setButtonRef = (button: ItemButton) => (el: HTMLElement) => { button.el = el }
+const setButtonRef = (button: ItemButton) => (el: HTMLElement) => { button.el = el; }
 
 const setItemConnectRef = (item: Item) => (el: any) => { item.connectEl = el }
 
@@ -144,7 +148,7 @@ const generateConnections = () => {
 onMounted(() => { generateConnections() })
 
 const onConfigUpdate = (config: any) => {
-  items.value = config.messages.map((item: any) => {
+  items.value = config.map((item: any) => {
     if (!item.buttons) {
       item.buttons = []
     }
@@ -152,7 +156,16 @@ const onConfigUpdate = (config: any) => {
     return item
   })
 
-  generateConnections()
+  isLoading.value = true
+
+  nextTick(() => {
+    isLoading.value = false;
+    nextTick(() => {
+      generateConnections()
+    })
+  })
+
+  // setTimeout(() => { isLoading.value = false;  }, 1000)
 }
 
 const save = () => {
@@ -194,7 +207,7 @@ const save = () => {
       </va-navbar-item>
     </template>
   </va-navbar>
-  <ScrollWrapper>
+  <ScrollWrapper v-if="!isLoading">
     <DraggableCanvas 
       v-model:items="items"
       v-model:mouse="mouse"

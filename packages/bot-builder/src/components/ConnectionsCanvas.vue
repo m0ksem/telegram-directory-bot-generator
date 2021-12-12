@@ -20,7 +20,9 @@ const getVueElement = (comp: any) => {
 }
 
 const safePoint = (point: Point | HTMLElement) => {
-  const { x: canvasX, y: canvasY, width: canvasWidth, height: canvasHeight } = canvas.value!.getBoundingClientRect()
+  if (point === undefined || !canvas.value) return { x: 0, y: 0 }
+
+  const { x: canvasX, y: canvasY, width: canvasWidth, height: canvasHeight } = canvas.value.getBoundingClientRect()
   const canvasScale = {
     x: canvas.value!.offsetWidth / canvasWidth,
     y: canvas.value!.offsetHeight / canvasHeight
@@ -34,6 +36,8 @@ const safePoint = (point: Point | HTMLElement) => {
   }
 
   const el = getVueElement(point)
+
+  if (!el.getBoundingClientRect) { return { x: 0, y: 0 } }
 
   const { x, y, width, height } = el.getBoundingClientRect()
 
