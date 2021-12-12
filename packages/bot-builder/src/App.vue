@@ -107,9 +107,7 @@ const unusedButtonsCount = computed(() => items.value.reduce((itemAcc, item) => 
     }, 0) + itemAcc
 }, 0))
 
-const createBotConfig = (clean: boolean = false) => {
-  if (!clean) { return items.value }
-
+const createBotConfig = () => {
   return items.value.map((item) => {
     return {
       text: item.text,
@@ -118,7 +116,8 @@ const createBotConfig = (clean: boolean = false) => {
         text: button.text,
         messageId: button.messageId,
         url: button.url
-      }))
+      })),
+      position: item.position,
     }
   })
 }
