@@ -1,23 +1,23 @@
+import { BotButtonUrl } from './../../../types/bot-config';
+import { BotMessage, BotButton, BotButtonId, BotMessageId } from 'types'
+
 export type Point = { x: number, y: number }
 
-export type ItemButton = {
-  text: string,
-  id: number | string,
+export type BuilderButton = BotButton & { 
   el?: HTMLElement,
-  messageId?: string
-  url?: string
+  id: BotButtonId,
+  messageId?: BotMessageId,
+  url?: BotButtonUrl
 }
 
-export type Item = {
-  id: number,
-  text: string,
-  buttons: ItemButton[]
+export type BuilderButtonRow = BuilderButton[]
+
+export type BuilderMessage = BotMessage & {
+  buttons: BuilderButtonRow[]
   position: Point,
-  connectEl?: HTMLElement
+  el?: HTMLElement
 }
 
-export type Connection = {
-  item: Item, el?: HTMLElement
-}
+export type Connection = { item: BuilderMessage, el?: HTMLElement }
 
-export type StartConnection = Connection & { button: ItemButton }
+export type StartConnection = Connection & { button: BuilderButton }

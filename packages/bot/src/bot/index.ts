@@ -1,4 +1,4 @@
-import { BotButton, BotConfig, BotMessage } from './config/types';
+import { BotButton, BotConfig, BotMessage } from 'types';
 import { Telegraf }  from 'telegraf'
 import { InlineKeyboardButton, InlineKeyboardMarkup, Update } from 'telegraf/typings/core/types/typegram';
 import { createSessions } from './session';
@@ -14,17 +14,17 @@ const createTelegramButtons = (button: (BotButton | BotCustomButton)): InlineKey
     }
   }
 
-  if (button.messageId) {
+  if ('messageId' in button) {
     return {
       text: button.text,
       callback_data: `go-to-message-${button.messageId}`
     }    
   }
 
-  if (button.url) {
+  if ('url' in button) {
     return {
       text: button.text,
-      url: `${button.url}`
+      url: button.url
     }
   }
 

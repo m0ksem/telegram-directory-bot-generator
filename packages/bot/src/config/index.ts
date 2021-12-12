@@ -1,4 +1,4 @@
-import { BotConfig } from '../bot/config/types'
+import { BotConfig } from 'types'
 
 export const config: BotConfig = {
   messages: [

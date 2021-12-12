@@ -8,20 +8,20 @@ import ExportJsonConfigPopupButton from './components/ExportJsonConfigPopupButto
 import ImportJsonConfigPopupButton from './components/ImportJsonConfigPopupButton.vue'
 import { useTheme } from './hooks/useTheme'
 import { useMouse } from './hooks/useMouse'
-import type { Item, ItemButton, Connection, StartConnection } from './types'
+import type { BuilderMessage, BuilderButton, Connection, StartConnection } from './types'
 import { getDefaultItems } from './store/items'
 
 const isLoading = ref(false)
 
 const { toggle: toggleTheme, isDark } = useTheme()
 
-const items = ref<Item[]>(getDefaultItems())
+const items = ref<BuilderMessage[]>(getDefaultItems())
 
 const createNewItem = () => {
   items.value.push({
     text: '',
-    id: items.value.length,
-    buttons: [],
+    id: String(items.value.length),
+    buttons: [[]],
     position: { x: 0, y: 0 }
   })
 }
@@ -32,13 +32,20 @@ const removeItem = (index: number) => {
   connections.value = connections.value.filter((conn) => conn.end.item.id !== item.id)
 }
 
-const addButton = (item: Item) => { item.buttons.push({ text: '', id: `${item.id}-${item.buttons.length}` }) }
-const removeButton = (item: Item, button: ItemButton) => { 
-  item.buttons = item.buttons.filter((b) => b.id !== button.id)
+const addButton = (item: BuilderMessage) => { 
+  item.buttons[0].push({
+    text: '', 
+    messageId: '',
+    id: `${item.id}-${item.buttons[0].length}`,
+  }) 
+}
+
+const removeButton = (item: BuilderMessage, button: BuilderButton) => {
+  item.buttons[0] = item.buttons[0].filter((b: BuilderButton) => b.id !== button.id)
   connections.value = connections.value.filter((conn) => conn.button.id !== button.id )
 }
 
-const connections = ref<{ start: Connection, end: Connection, button: ItemButton }[]>([])
+const connections = ref<{ start: Connection, end: Connection, button: BuilderButton }[]>([])
 
 const connectionsCanvas = ref()
 const { mouse, onRightClick } = useMouse(connectionsCanvas)
@@ -64,11 +71,11 @@ const computedConnections = computed(() => {
   return [...activeConnections, ...mouseConnection]
 })
 
-const connectFrom = (item: Item, button: ItemButton, event: MouseEvent) => {
+const connectFrom = (item: BuilderMessage, button: BuilderButton, event: MouseEvent) => {
   startConnection.value = { item, button, el: event.target as HTMLElement }
 }
 
-const connectTo = (item: Item, event: MouseEvent) => {
+const connectTo = (item: BuilderMessage, event: MouseEvent) => {
   if (!startConnection.value) { return }
 
   connections.value.push({ 
@@ -82,26 +89,26 @@ const connectTo = (item: Item, event: MouseEvent) => {
   startConnection.value = null
 }
 
-const unconnectButton = (button: ItemButton) => {
+const unconnectButton = (button: BuilderButton) => {
   connections.value = connections.value.filter((conn) => conn.button.id !== button.id)
   button.messageId = undefined
 }
 
 const undoConnectFrom = () => { startConnection.value = null }
 
-const isButtonConnected = (button: ItemButton) => connections.value.some((con) => con.button.id === button.id)
-const isItemConnected = (item: Item) => connections.value.some((con) => con.end.item.id === item.id)
+const isButtonConnected = (button: BuilderButton) => connections.value.some((con) => con.button.id === button.id)
+const isItemConnected = (item: BuilderMessage) => connections.value.some((con) => con.end.item.id === item.id)
 
 const unconnectedItemsCount = computed(() => items.value.reduce((acc, item) => {
-  if (item.id === 0) { return acc } 
+  if (item.id === '0') { return acc } 
 
   return connections.value.some((con) => con.end.item.id === item.id) ? acc : acc + 1
 }, 0))
 
 const unusedButtonsCount = computed(() => items.value.reduce((itemAcc, item) => {
-  return item.buttons
-    .reduce((buttonAcc, btn) => {
-      if (btn.url !== undefined) { return 0 }
+  return item.buttons[0]
+    .reduce((buttonAcc, btn: BuilderButton) => {
+      if ('url' in btn) { return 0 }
 
       return connections.value.some((con) => con.button.id === btn.id) ? buttonAcc : buttonAcc + 1
     }, 0) + itemAcc
@@ -112,24 +119,24 @@ const createBotConfig = () => {
     return {
       text: item.text,
       id: item.id,
-      buttons: item.buttons.map((button) => ({
+      buttons: item.buttons[0].map((button) => ({
         text: button.text,
-        messageId: button.messageId,
-        url: button.url
+        messageId: 'messageId' in button ? button.messageId : undefined,
+        url: 'url' in button ? button.url : undefined
       })),
       position: item.position,
     }
   })
 }
 
-const setButtonRef = (button: ItemButton) => (el: HTMLElement) => { button.el = el; }
+const setButtonRef = (button: BuilderButton) => (el: HTMLElement) => { button.el = el; }
 
-const setItemConnectRef = (item: Item) => (el: any) => { item.connectEl = el }
+const setItemConnectRef = (item: BuilderMessage) => (el: any) => { item.el = el }
 
 const generateConnections = () => {
   items.value.forEach((startItem) => {
-    startItem.buttons.forEach((button) => {
-      if (button.messageId === undefined) { return }
+    startItem.buttons[0].forEach((button: BuilderButton) => {
+      if (!('messageId' in button)) { return }
 
       const endItem = items.value.find((item) => String(item.id) === button.messageId)
 
@@ -137,7 +144,7 @@ const generateConnections = () => {
 
       connections.value.push({
         start: { item: startItem, el: button.el },
-        end: { item: endItem, el: endItem.connectEl },
+        end: { item: endItem, el: endItem.el },
         button,
       })
     })
@@ -221,7 +228,7 @@ const save = () => {
     
           <va-card-content v-if="item.buttons.length">
               <va-list-label color="primary">Buttons</va-list-label>
-              <va-card outlined v-for="button in (item.buttons as ItemButton[])" style="margin: 0 -8px;" class="mb-1">
+              <va-card outlined v-for="button in (item.buttons[0] as BuilderButton[])" style="margin: 0 -8px;" class="mb-1">
                 <va-list-item class="bot-button">
                     <va-button class="mr-2" icon="delete" color="danger" @click="removeButton(item, button)" />
                     <div class="pr-2">
