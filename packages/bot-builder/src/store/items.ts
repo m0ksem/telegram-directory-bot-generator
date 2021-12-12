@@ -1,5 +1,9 @@
 import { Item } from "../types";
 
+export const getDefaultItems = () => {
+  return JSON.parse(localStorage.getItem('items') || 'null') || defaultItems
+}
+
 export const defaultItems: Item[] = [
   {
     id: 0,

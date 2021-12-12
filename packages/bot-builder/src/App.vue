@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import DraggableCanvas from './components/DraggableCanvas.vue'
 import ConnectionsCanvas from './components/ConnectionsCanvas.vue'
 import GithubLogo from './components/icons/GithubIcon.vue'
@@ -9,11 +9,11 @@ import ImportJsonConfigPopupButton from './components/ImportJsonConfigPopupButto
 import { useTheme } from './hooks/useTheme'
 import { useMouse } from './hooks/useMouse'
 import type { Item, ItemButton, Connection, StartConnection } from './types'
-import { defaultItems } from './store/items'
+import { getDefaultItems } from './store/items'
 
 const { toggle: toggleTheme, isDark } = useTheme()
 
-const items = ref<Item[]>(defaultItems)
+const items = ref<Item[]>(getDefaultItems())
 
 const createNewItem = () => {
   items.value.push({
@@ -151,6 +151,12 @@ const onConfigUpdate = (config: any) => {
 
     return item
   })
+
+  generateConnections()
+}
+
+const save = () => {
+  localStorage['items'] = JSON.stringify(items.value)
 }
 </script>
 
@@ -176,6 +182,7 @@ const onConfigUpdate = (config: any) => {
         </va-popover>
         
         <va-button class="mr-2" @click="createNewItem" icon="add"> Add </va-button>
+        <va-button class="mr-2" @click="save" icon="save"> Save </va-button>
         <ImportJsonConfigPopupButton class="mr-2" @update:config="onConfigUpdate"> Import from JSON </ImportJsonConfigPopupButton>
         <ExportJsonConfigPopupButton class="mr-2" :create-config="createBotConfig"> Export to JSON </ExportJsonConfigPopupButton>
         <va-button class="mr-2" @click="toggleTheme" round :color="isDark ? '#f4f8fa' : '#202020'" text-color="white">
