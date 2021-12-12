@@ -9,11 +9,9 @@ export type ItemButton = {
 }
 
 export type Item = {
-  data: {
-    id: number,
-    text: string,
-    buttons: ItemButton[]
-  },
+  id: number,
+  text: string,
+  buttons: ItemButton[]
   position: Point,
   connectEl?: HTMLElement
 }

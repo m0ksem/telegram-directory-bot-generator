@@ -6,7 +6,7 @@ import { useSyncProp } from '../hooks/useSyncProp'
 
 const emit = defineEmits(['update:items', 'update:hovered', 'update:selected', 'update:mouse'])
 
-type Item = { position: { x: number, y: number }, data: any, }
+type Item = { position: { x: number, y: number } } & any
 
 const props = defineProps({
   items: { type: Array as PropType<Item[]>, default: () => [] }

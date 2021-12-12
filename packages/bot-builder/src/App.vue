@@ -4,7 +4,8 @@ import DraggableCanvas from './components/DraggableCanvas.vue'
 import ConnectionsCanvas from './components/ConnectionsCanvas.vue'
 import GithubLogo from './components/icons/GithubIcon.vue'
 import ScrollWrapper from './components/ScrollWrapper.vue'
-import JsonConfigPopupButton from './components/JsonConfigPopupButton.vue'
+import ExportJsonConfigPopupButton from './components/ExportJsonConfigPopupButton.vue'
+import ImportJsonConfigPopupButton from './components/ImportJsonConfigPopupButton.vue'
 import { useTheme } from './hooks/useTheme'
 import { useMouse } from './hooks/useMouse'
 import type { Item, ItemButton, Connection, StartConnection } from './types'
@@ -16,11 +17,9 @@ const items = ref<Item[]>(defaultItems)
 
 const createNewItem = () => {
   items.value.push({
-    data: {
-      text: '',
-      id: items.value.length,
-      buttons: []
-    },
+    text: '',
+    id: items.value.length,
+    buttons: [],
     position: { x: 0, y: 0 }
   })
 }
@@ -28,12 +27,12 @@ const createNewItem = () => {
 const removeItem = (index: number) => {
   const item = items.value[index]
   items.value = items.value.filter((i, idx) => idx !== index)
-  connections.value = connections.value.filter((conn) => conn.end.item.data.id !== item.data.id)
+  connections.value = connections.value.filter((conn) => conn.end.item.id !== item.id)
 }
 
-const addButton = (item: Item) => { item.data.buttons.push({ text: '', id: `${item.data.id}-${item.data.buttons.length}` }) }
+const addButton = (item: Item) => { item.buttons.push({ text: '', id: `${item.id}-${item.buttons.length}` }) }
 const removeButton = (item: Item, button: ItemButton) => { 
-  item.data.buttons = item.data.buttons.filter((b) => b.id !== button.id)
+  item.buttons = item.buttons.filter((b) => b.id !== button.id)
   connections.value = connections.value.filter((conn) => conn.button.id !== button.id )
 }
 
@@ -76,7 +75,7 @@ const connectTo = (item: Item, event: MouseEvent) => {
     button: startConnection.value.button
   })
 
-  startConnection.value.button.messageId = String(item.data.id)
+  startConnection.value.button.messageId = String(item.id)
 
   startConnection.value = null
 }
@@ -89,16 +88,16 @@ const unconnectButton = (button: ItemButton) => {
 const undoConnectFrom = () => { startConnection.value = null }
 
 const isButtonConnected = (button: ItemButton) => connections.value.some((con) => con.button.id === button.id)
-const isItemConnected = (item: Item) => connections.value.some((con) => con.end.item.data.id === item.data.id)
+const isItemConnected = (item: Item) => connections.value.some((con) => con.end.item.id === item.id)
 
 const unconnectedItemsCount = computed(() => items.value.reduce((acc, item) => {
-  if (item.data.id === 0) { return acc } 
+  if (item.id === 0) { return acc } 
 
-  return connections.value.some((con) => con.end.item.data.id === item.data.id) ? acc : acc + 1
+  return connections.value.some((con) => con.end.item.id === item.id) ? acc : acc + 1
 }, 0))
 
 const unusedButtonsCount = computed(() => items.value.reduce((itemAcc, item) => {
-  return item.data.buttons
+  return item.buttons
     .reduce((buttonAcc, btn) => {
       if (btn.url !== undefined) { return 0 }
 
@@ -109,9 +108,9 @@ const unusedButtonsCount = computed(() => items.value.reduce((itemAcc, item) => 
 const createBotConfig = () => {
   return items.value.map((item) => {
     return {
-      text: item.data.text,
-      id: item.data.id,
-      buttons: item.data.buttons.map((button) => ({
+      text: item.text,
+      id: item.id,
+      buttons: item.buttons.map((button) => ({
         text: button.text,
         messageId: button.messageId,
         url: button.url
@@ -126,10 +125,10 @@ const setItemConnectRef = (item: Item) => (el: any) => { item.connectEl = el }
 
 const generateConnections = () => {
   items.value.forEach((startItem) => {
-    startItem.data.buttons.forEach((button) => {
+    startItem.buttons.forEach((button) => {
       if (button.messageId === undefined) { return }
 
-      const endItem = items.value.find((item) => String(item.data.id) === button.messageId)
+      const endItem = items.value.find((item) => String(item.id) === button.messageId)
 
       if (!endItem) { return }
 
@@ -142,9 +141,17 @@ const generateConnections = () => {
   })
 }
 
-onMounted(() => {
-  generateConnections()
-})
+onMounted(() => { generateConnections() })
+
+const onConfigUpdate = (config: any) => {
+  items.value = config.messages.map((item: any) => {
+    if (!item.buttons) {
+      item.buttons = []
+    }
+
+    return item
+  })
+}
 </script>
 
 <template>
@@ -169,7 +176,8 @@ onMounted(() => {
         </va-popover>
         
         <va-button class="mr-2" @click="createNewItem" icon="add"> Add </va-button>
-        <JsonConfigPopupButton :create-config="createBotConfig" class="mr-2"> Export to JSON </JsonConfigPopupButton>
+        <ImportJsonConfigPopupButton class="mr-2" @update:config="onConfigUpdate"> Import from JSON </ImportJsonConfigPopupButton>
+        <ExportJsonConfigPopupButton class="mr-2" :create-config="createBotConfig"> Export to JSON </ExportJsonConfigPopupButton>
         <va-button class="mr-2" @click="toggleTheme" round :color="isDark ? '#f4f8fa' : '#202020'" text-color="white">
           <va-icon name="palette" :color="!isDark ? '#f4f8fa' : '#202020'" />
         </va-button>
@@ -188,15 +196,15 @@ onMounted(() => {
       <template #item="{ index, listeners, style, item }">
         <va-card class="action-card" style="opacity: 0.94;">
           <va-card-title v-on="listeners" :style="{ color: 'var(--va-primary)', background: 'rgba(0, 0, 0, 0.1)', ...style }" >
-          Action <span class="ml-2">{{ item.data.id + 1 }}</span>
+          Action <span class="ml-2">{{ item.id + 1 }}</span>
           </va-card-title>
           <va-card-content class="pt-2">
-            <va-input label="Text" type="textarea" v-model="item.data.text" placeholder="Message text" />
+            <va-input label="Text" type="textarea" v-model="item.text" placeholder="Message text" />
           </va-card-content>
     
-          <va-card-content v-if="item.data.buttons.length">
+          <va-card-content v-if="item.buttons.length">
               <va-list-label color="primary">Buttons</va-list-label>
-              <va-card outlined v-for="button in (item.data.buttons as ItemButton[])" style="margin: 0 -8px;">
+              <va-card outlined v-for="button in (item.buttons as ItemButton[])" style="margin: 0 -8px;">
                 <va-list-item class="bot-button">
                     <va-button class="mr-2" icon="delete" color="danger" @click="removeButton(item, button)" />
                     <div class="pr-2">
