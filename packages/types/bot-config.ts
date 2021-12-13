@@ -12,7 +12,7 @@ export type BotUrlButton = {
   url: string,
 }
 
-export type BotButton = BotMessageIdButton | BotUrlButton
+export type BotButton = (BotMessageIdButton | BotUrlButton) & { [key: string]: any }
 
 export type BotButtonRow = BotButton[]
 
@@ -24,6 +24,8 @@ export type BotMessage = {
   // Unused for now
   hideHomeButton?: boolean,
   hideBackButton?: boolean
+
+  [key: string]: any
 }
 
 export type BotConfig = {
