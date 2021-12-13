@@ -126,4 +126,8 @@ export const initBot = (token: string, config: BotConfig) => {
   })
 
   bot.launch()
+
+  return () => {
+    bot.stop()
+  }
 }
