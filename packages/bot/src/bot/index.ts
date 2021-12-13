@@ -96,7 +96,7 @@ export const initBot = (token: string, config: BotConfig) => {
 
       const messageId = session.getPrevious()
 
-      const message = messages.find((message) => message.id === messageId)
+      const message = messages.find((message) => message.id === messageId) || messages[0]
 
       if (!message) { throw new Error(`Invalid message id ${messageId}`)}
 
