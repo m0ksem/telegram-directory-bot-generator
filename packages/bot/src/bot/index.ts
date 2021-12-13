@@ -66,7 +66,7 @@ export const initBot = (token: string, config: BotConfig) => {
 
     if (homeButton) {
       keyboard.inline_keyboard.push([
-        createTelegramButtons({ text: homeButton.text, messageId: homeButton.messageId || '0' })
+        createTelegramButtons({ text: homeButton.text, messageId: homeButton.messageId || messages[0].id })
       ])
     }
   
