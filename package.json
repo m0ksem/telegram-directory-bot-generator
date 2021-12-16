@@ -6,6 +6,7 @@
   "scripts": {
     "serve:bot": "yarn workspace bot serve",
     "serve:builder": "yarn workspace bot-builder serve",
+    "serve:server": "yarn workspace server serve",
     "preview:builder": "yarn workspace bot-builder preview",
     "build:builder": "yarn workspace bot-builder build"
   }

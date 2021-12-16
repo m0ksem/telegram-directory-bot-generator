@@ -1,5 +1,5 @@
 import { BotButton } from 'types';
-import { InlineKeyboardButton, InlineKeyboardMarkup, Update } from 'telegraf/typings/core/types/typegram';
+import { InlineKeyboardButton, InlineKeyboardMarkup } from 'telegraf/typings/core/types/typegram';
 
 type BotCustomButton = { text: string, data: string}
 
