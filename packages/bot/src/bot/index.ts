@@ -4,6 +4,8 @@ import { createTelegramButtons, createTelegramKeyboard } from './keyboard'
 import { createSessions } from './session';
 import { ExtraEditMessageText } from 'telegraf/typings/telegram-types';
 
+export * from 'types'
+
 export class Bot extends Telegraf {
   config
   sessions
