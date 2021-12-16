@@ -1,0 +1,9 @@
+{
+    "homeButton": {
+      "text": "Go to home"
+    },
+    
+    "backButton": {
+      "text": "Back"
+    }
+}
