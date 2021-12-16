@@ -1,62 +1,67 @@
-import { BotButton, BotConfig, BotMessage } from 'types';
-import { Telegraf }  from 'telegraf'
-import { InlineKeyboardButton, InlineKeyboardMarkup, Update } from 'telegraf/typings/core/types/typegram';
+import { BotConfig, BotMessage } from 'types';
+import { Context, Telegraf }  from 'telegraf'
+import { createTelegramButtons, createTelegramKeyboard } from './keyboard'
 import { createSessions } from './session';
 import { ExtraEditMessageText } from 'telegraf/typings/telegram-types';
 
-type BotCustomButton = { text: string, data: string}
+export * from 'types'
 
-const createTelegramButtons = (button: (BotButton | BotCustomButton)): InlineKeyboardButton => {
-  if ('data' in button) {
-    return {
-      text: button.text,
-      callback_data: `${button.data}`
-    }
+export class Bot extends Telegraf {
+  config
+  sessions
+
+  get messages() { return this.config.messages }
+
+  constructor(token: string, config: BotConfig) {
+    super(token)
+    this.config = config;
+
+    this.sessions = createSessions({ 
+      history: [] as string[],
+      getPrevious() { return this.history[this.history.length - 1 - 1] },
+    })
+
+    this.start((ctx) => {
+      const { text, extra } = this.createTelegramMessage(this.messages[0])
+      ctx.reply(text, extra)
+    })
+
+    this.on('callback_query', (ctx) => {
+      if (!('data' in ctx.callbackQuery)) {
+        return
+      }
+  
+      const data = ctx.callbackQuery.data
+  
+      if (data.startsWith('back')) {
+        const session = this.sessions[ctx.from?.id || '']
+        const messageId = session.getPrevious()
+  
+        this.answer(ctx, messageId)
+  
+        session.history.pop()
+        return
+      }
+  
+      if (data.startsWith('go-to-message-')) {
+        const session = this.sessions[ctx.from?.id || '']
+        const messageId = data.replace('go-to-message-', '')
+
+        const message = this.answer(ctx, messageId)
+  
+        session.history.push(message.id)
+        return
+      }
+    })
+
+    this.launch()
   }
 
-  if ('messageId' in button) {
-    return {
-      text: button.text,
-      callback_data: `go-to-message-${button.messageId}`
-    }    
-  }
-
-  if ('url' in button) {
-    return {
-      text: button.text,
-      url: button.url
-    }
-  }
-
-  throw new Error(`Url or messageId is required`)
-}
-
-const createTelegramKeyboard = (buttons: BotButton[][] = [],): InlineKeyboardMarkup => {
-  const keyboard = buttons.map((buttonRow) => buttonRow.map((button) => createTelegramButtons(button)))
-
-  return {
-    inline_keyboard: keyboard
-  }
-}
-
-export const initBot = (token: string, config: BotConfig) => {
-  const bot = new Telegraf(token)
-  const messages = config.messages
-  const sessions = createSessions({ 
-    history: [] as string[],
-    getPrevious() {
-      return this.history[this.history.length - 1 - 1]
-    },
-    pop() {
-      return this.history.pop()
-    }
-  })
-
-  const createTelegramMessage = (message: BotMessage): { text: string, extra?: ExtraEditMessageText } => {
+  createTelegramMessage(message: BotMessage): { text: string, extra?: ExtraEditMessageText }  {
     const keyboard = createTelegramKeyboard(message.buttons)
 
-    const homeButton = message.hideHomeButton ? undefined : config.settings.homeButton
-    const backButton = message.hideBackButton ? undefined : config.settings.backButton
+    const homeButton = message.hideHomeButton ? undefined : this.config.settings.homeButton
+    const backButton = message.hideBackButton ? undefined : this.config.settings.backButton
 
     if (backButton) {
       keyboard.inline_keyboard.push([
@@ -66,7 +71,7 @@ export const initBot = (token: string, config: BotConfig) => {
 
     if (homeButton) {
       keyboard.inline_keyboard.push([
-        createTelegramButtons({ text: homeButton.text, messageId: homeButton.messageId || '0' })
+        createTelegramButtons({ text: homeButton.text, messageId: homeButton.messageId || this.messages[0].id })
       ])
     }
   
@@ -79,55 +84,18 @@ export const initBot = (token: string, config: BotConfig) => {
     }
   }
 
-  bot.start((ctx) => {
-    const { text, extra } = createTelegramMessage(messages[0])
-    ctx.reply(text, extra)
-  })
+  answer(ctx: Context, messageId: string) {
+    // TODO: Hot fixed: If message is invalid, return to first message.
+    const message = this.messages.find((message) => message.id === messageId) || this.messages[0]
+  
+    if (!message) { throw new Error(`Invalid message id ${messageId}`)}
 
-  bot.on('callback_query', (ctx) => {
-    if (!('data' in ctx.callbackQuery)) {
-      return
-    }
+    const { text, extra } = this.createTelegramMessage(message)
 
-    const data = ctx.callbackQuery.data
+    ctx.editMessageText(text, extra)
 
-    if (data.startsWith('back')) {
-      const session = sessions[ctx.from?.id || '']
-
-      const messageId = session.getPrevious()
-
-      const message = messages.find((message) => message.id === messageId) || messages[0]
-
-      if (!message) { throw new Error(`Invalid message id ${messageId}`)}
-
-      const { text, extra } = createTelegramMessage(message)
-
-      ctx.editMessageText(text, extra)
-
-      session.pop()
-      return
-    }
-
-    if (data.startsWith('go-to-message-')) {
-      const messageId = data.replace('go-to-message-', '')
-      const session = sessions[ctx.from?.id || '']
-
-      const message = messages.find((message) => message.id === messageId)
-
-      if (!message) { throw new Error(`Invalid message id ${messageId}`)}
-
-      const { text, extra } = createTelegramMessage(message)
-
-      ctx.editMessageText(text, extra)
-
-      session.history.push(message.id)
-      return
-    }
-  })
-
-  bot.launch()
-
-  return () => {
-    bot.stop()
+    return message
   }
+
+  updateConfig(config: BotConfig) { this.config = config; this.sessions = {} }
 }

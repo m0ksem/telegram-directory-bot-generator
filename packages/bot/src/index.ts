@@ -1,7 +1,5 @@
-import { initBot } from './bot'
+import { Bot } from './bot'
 import { config } from './config'
 import './utils/loadDotEnv'
 
-initBot(process.env.BOT_TOKEN as string, config)
-
-export { initBot } from './bot'
+new Bot(process.env.BOT_TOKEN as string, config)
