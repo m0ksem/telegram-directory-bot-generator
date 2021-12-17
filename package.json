@@ -8,6 +8,7 @@
     "serve:builder": "yarn workspace bot-builder serve",
     "serve:server": "yarn workspace server serve",
     "preview:builder": "yarn workspace bot-builder preview",
-    "build:builder": "yarn workspace bot-builder build"
+    "build:builder": "yarn workspace bot-builder build",
+    "build:server": "yarn workspace server build"
   }
 }
