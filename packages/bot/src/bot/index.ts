@@ -9,6 +9,7 @@ export * from 'types'
 export class Bot extends Telegraf {
   config
   sessions
+  cleanSessions
 
   get messages() { return this.config.messages }
 
@@ -16,10 +17,13 @@ export class Bot extends Telegraf {
     super(token)
     this.config = config;
 
-    this.sessions = createSessions({ 
+    const { sessions, clean } = createSessions({ 
       history: [] as string[],
       getPrevious() { return this.history[this.history.length - 1 - 1] },
     })
+
+    this.sessions = sessions
+    this.cleanSessions = clean
 
     this.start((ctx) => {
       const { text, extra } = this.createTelegramMessage(this.messages[0])
@@ -97,5 +101,5 @@ export class Bot extends Telegraf {
     return message
   }
 
-  updateConfig(config: BotConfig) { this.config = config; this.sessions = {} }
+  updateConfig(config: BotConfig) { this.config = config; this.cleanSessions() }
 }
